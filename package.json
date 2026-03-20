@@ -1,0 +1,16 @@
+{
+  "name": "code-math",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test",
+    "clean": "node -e \"import('node:fs/promises').then(fs => fs.rm('dist', { recursive: true, force: true }))\""
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "katex": "^0.16.40",
+    "markdown-it": "^14.1.1",
+    "markdown-it-katex": "^2.0.3"
+  }
+}
