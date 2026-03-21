@@ -7,7 +7,6 @@ const annotatedSourceSegments = sourceSegments.filter(
 );
 const noteStack = document.querySelector("[data-note-stack]");
 const notesPanel = document.querySelector(".article-notes-panel");
-const sourcePanel = document.querySelector(".article-source-panel");
 const focusLayer = document.querySelector("[data-focus-layer]");
 const focusCard = document.querySelector("[data-focus-card]");
 const FOCUS_STICKY_TOP = 24;
@@ -20,6 +19,8 @@ const sourceByIndex = new Map(
 let activePair = null;
 let layoutFrame = 0;
 let autoFocusFrame = 0;
+let lastScrollY = window.scrollY;
+let scrollDirection = 0;
 
 function getActiveAnnotatedIndex() {
   if (!activePair?.dataset.pairIndex) {
@@ -73,8 +74,6 @@ function setFocusPosition(pair) {
   const offset = Math.min(Math.max(stickyOffset, alignedOffset), trailingOffset);
 
   focusCard.style.setProperty("--focus-offset", `${Math.max(0, offset)}px`);
-  const minHeight = Math.max(sourcePanel?.offsetHeight ?? 0, offset + notePanel.offsetHeight);
-  notesPanel.style.minHeight = `${minHeight}px`;
 }
 
 function resetFocusMode() {
@@ -85,7 +84,6 @@ function resetFocusMode() {
   focusLayer?.setAttribute("hidden", "");
   focusCard?.style.removeProperty("--focus-offset");
   focusCard?.removeAttribute("data-pair-index");
-  notesPanel?.style.removeProperty("min-height");
 
   for (const pair of notePairs) {
     pair.classList.remove("is-active");
@@ -126,38 +124,9 @@ function applyFocusMode(pair) {
   scheduleFocusPosition(pair);
 }
 
-function isNearPageBottom() {
-  const viewportBottom = window.scrollY + window.innerHeight;
-  const documentHeight = Math.max(
-    document.documentElement?.scrollHeight ?? 0,
-    document.body?.scrollHeight ?? 0,
-  );
-
-  return documentHeight - viewportBottom <= 32;
-}
-
-function findLastVisiblePair() {
-  for (let index = annotatedSourceSegments.length - 1; index >= 0; index -= 1) {
-    const segment = annotatedSourceSegments[index];
-    const rect = segment.getBoundingClientRect();
-    const visibleTop = Math.max(rect.top, 0);
-    const visibleBottom = Math.min(rect.bottom, window.innerHeight);
-
-    if (visibleBottom - visibleTop > 0) {
-      return notePairByIndex.get(segment.dataset.pairIndex) ?? null;
-    }
-  }
-
-  return null;
-}
-
 function findCenteredPair() {
   if (!annotatedSourceSegments.length) {
     return null;
-  }
-
-  if (isNearPageBottom()) {
-    return findLastVisiblePair();
   }
 
   const bestIndex = pickAutoFocusIndex(
@@ -175,6 +144,7 @@ function findCenteredPair() {
       activeIndex: getActiveAnnotatedIndex(),
       retainTop: window.innerHeight * 0.34,
       retainBottom: window.innerHeight * 0.68,
+      scrollDirection,
     },
   );
 
@@ -209,12 +179,15 @@ function scheduleAutoFocus() {
 }
 
 window.addEventListener("resize", () => {
+  scrollDirection = 0;
   scheduleAutoFocus();
 });
 
 window.addEventListener(
   "scroll",
   () => {
+    scrollDirection = Math.sign(window.scrollY - lastScrollY);
+    lastScrollY = window.scrollY;
     scheduleAutoFocus();
   },
   { passive: true },

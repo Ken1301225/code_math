@@ -177,6 +177,16 @@ $$
     assert.match(homeHtml, /Prefix Sum Walkthrough/);
     assert.match(homeHtml, /Regret Bound Walkthrough/);
     assert.match(homeHtml, /class="site-heading"/);
+    assert.match(homeHtml, /class="site-metrics-grid"/);
+    assert.match(homeHtml, /class="stat-panel project-map-panel"/);
+    assert.match(homeHtml, /class="project-map-cell"/);
+    assert.match(homeHtml, /class="stat-panel tag-spectrum-panel"/);
+    assert.match(homeHtml, /class="stat-panel activity-panel"/);
+    assert.match(homeHtml, /class="archive-board"/);
+    assert.match(homeHtml, /class="archive-density-chart"/);
+    assert.match(homeHtml, /data-project-name="root"/);
+    assert.match(homeHtml, /data-project-name="sparsegpt"/);
+    assert.doesNotMatch(homeHtml, /class="site-ledger"/);
     assert.match(homeHtml, /class="guide-strip"/);
     assert.match(homeHtml, /class="guide-link guide-link--code"/);
     assert.match(homeHtml, /class="guide-link guide-link--math"/);
@@ -195,18 +205,34 @@ $$
     assert.match(siteCss, /unicode-range:/);
     assert.match(siteCss, /font-family: "LXGW WenKai"/);
     assert.match(siteCss, /font-family: "Hack Nerd Font"/);
+    assert.match(siteCss, /\.site-metrics-grid/);
+    assert.match(siteCss, /\.project-map-panel/);
+    assert.match(siteCss, /\.archive-board/);
     assert.match(articleJs, /function findCenteredPair/);
     assert.match(articleJs, /function scheduleAutoFocus/);
     assert.match(articleJs, /pickAutoFocusIndex/);
+    assert.match(articleJs, /let lastScrollY = window\.scrollY/);
+    assert.match(articleJs, /scrollDirection,/);
+    assert.doesNotMatch(articleJs, /function isNearPageBottom/);
+    assert.doesNotMatch(articleJs, /function findLastVisiblePair/);
+    assert.doesNotMatch(articleJs, /style\.minHeight/);
     assert.doesNotMatch(articleJs, /lockedPair/);
     assert.doesNotMatch(articleJs, /toggleFocus/);
     assert.doesNotMatch(articleJs, /hashchange/);
     assert.match(focusLogicJs, /export function pickAutoFocusIndex/);
+    assert.match(siteCss, /\.pair-stream\.is-hidden\s*\{[^}]*visibility:\s*hidden/);
+    assert.doesNotMatch(siteCss, /\.pair-stream\.is-hidden\s*\{[^}]*display:\s*none/);
+    assert.match(siteCss, /\.source-stream\s*\{[^}]*padding-bottom:\s*clamp\(220px,\s*34vh,\s*360px\)/);
+    assert.match(siteCss, /\.focus-note-layer/);
+    assert.match(siteCss, /\.focus-note-card/);
+    assert.match(siteCss, /transform:\s*translate3d\(0,\s*var\(--focus-offset,\s*0px\),\s*0\)/);
     assert.ok(hackFont.length > 0);
     assert.ok(wenkaiFont.length > 0);
 
     assert.match(codeHtml, /The sentinel zero makes interval subtraction uniform/);
     assert.match(codeHtml, /data-pair-id="intro"/);
+    assert.match(codeHtml, /class="[^"]*pair-source-segment[^"]*"[^>]*id="intro"/);
+    assert.doesNotMatch(codeHtml, /<li class="pair-unit"[^>]*\sid="intro"/);
     assert.match(codeHtml, /href="\/code_math\/assets\/css\/site\.css\?v=[^"]+"/);
     assert.match(
       codeHtml,
@@ -236,6 +262,7 @@ $$
     assert.match(codeHtml, /data-note-stack/);
     assert.match(codeHtml, /data-focus-layer/);
     assert.match(codeHtml, /data-focus-card/);
+    assert.doesNotMatch(codeHtml, /data-focus-shell/);
     assert.match(codeHtml, /class="[^"]*pair-unit[^"]*"/);
     assert.match(codeHtml, /class="[^"]*pair-source-segment[^"]*"[^>]*data-pair-index="1"/);
     assert.doesNotMatch(codeHtml, /data-lock-target=/);
@@ -257,6 +284,8 @@ $$
 
     assert.match(emptyHtml, /token token--builtin">print/);
     assert.doesNotMatch(emptyHtml, /data-note-panel/);
+    assert.doesNotMatch(emptyHtml, /data-note-stack/);
+    assert.doesNotMatch(emptyHtml, /data-focus-layer/);
     assert.doesNotMatch(emptyHtml, /data-lock-target="1" id="only"/);
     assert.doesNotMatch(emptyHtml, /data-pair-index="1"/);
     assert.match(emptyHtml, /class="pair-source-marker pair-source-marker--silent"/);

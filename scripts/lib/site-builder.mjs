@@ -94,17 +94,18 @@ export async function buildSite(options = {}) {
 
   await writeOutput(
     path.join(outDir, "index.html"),
-    renderHomePage({
+      renderHomePage({
       siteTitle: SITE_TITLE,
       assets,
       basePath,
       intro:
-        "A lightweight reading site for paired code annotations and math proof notes.",
+        "Chart-first archive for paired code commentary and math proof notes.",
       guides: [
         { label: TYPE_LABELS.code, href: withBasePath(basePath, "/type/code/"), kind: "code" },
         { label: TYPE_LABELS.math, href: withBasePath(basePath, "/type/math/"), kind: "math" },
       ],
       latest: listings.latest,
+      siteStats,
     }),
   );
 
@@ -165,10 +166,12 @@ export async function buildSite(options = {}) {
 }
 
 function collectSiteStats(listings) {
+  const articles = listings.latest;
   const articleTypeCounts = {
     code: listings.byType.code.length,
     math: listings.byType.math.length,
   };
+  const totalPairs = articles.reduce((sum, article) => sum + article.pairs.length, 0);
   const tagCounts = Object.entries(listings.byTag)
     .map(([tag, taggedArticles], index) => ({
       tag,
@@ -177,16 +180,64 @@ function collectSiteStats(listings) {
     }))
     .sort((left, right) => right.count - left.count || left.tag.localeCompare(right.tag));
   const totalTagAssignments = tagCounts.reduce((sum, item) => sum + item.count, 0);
+  const projectGroups = collectProjectGroups(articles);
+  const activityByDate = collectActivityByDate(articles);
 
   return {
     articleTypeCounts,
     totalArticles: articleTypeCounts.code + articleTypeCounts.math,
+    totalPairs,
     totalTagAssignments,
     tagCounts: tagCounts.map((item) => ({
       ...item,
       percent: totalTagAssignments ? Math.round((item.count / totalTagAssignments) * 100) : 0,
     })),
+    projectGroups,
+    activityByDate,
   };
+}
+
+function collectProjectGroups(articles) {
+  const grouped = new Map();
+
+  for (const article of articles) {
+    const key = article.routeSegments.slice(0, -1).join("/") || "root";
+    if (!grouped.has(key)) {
+      grouped.set(key, []);
+    }
+
+    grouped.get(key).push(article);
+  }
+
+  return [...grouped.entries()]
+    .map(([name, projectArticles]) => {
+      const typeMix = {
+        code: projectArticles.filter((article) => article.type === "code").length,
+        math: projectArticles.filter((article) => article.type === "math").length,
+      };
+
+      return {
+        name,
+        count: projectArticles.length,
+        pairCount: projectArticles.reduce((sum, article) => sum + article.pairs.length, 0),
+        typeMix,
+      };
+    })
+    .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name));
+}
+
+function collectActivityByDate(articles) {
+  const grouped = new Map();
+
+  for (const article of articles) {
+    const current = grouped.get(article.date) ?? 0;
+    grouped.set(article.date, current + 1);
+  }
+
+  return [...grouped.entries()]
+    .map(([date, count]) => ({ date, count }))
+    .sort((left, right) => left.date.localeCompare(right.date))
+    .slice(-6);
 }
 
 export function collectListings(articles) {

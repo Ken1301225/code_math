@@ -1,5 +1,7 @@
 export function renderArticlePage({ siteTitle, assets, basePath, article, siteStats }) {
   const pairViews = buildPairViews(article.pairs);
+  const annotatedPairViews = pairViews.filter((pairView) => pairView.annotatedIndex !== null);
+  const hasAnnotatedPairs = annotatedPairViews.length > 0;
 
   return pageShell({
     siteTitle,
@@ -29,7 +31,7 @@ export function renderArticlePage({ siteTitle, assets, basePath, article, siteSt
           </div>
         </header>
         <section class="article-body">
-          <div class="article-reading-grid" data-article-layout>
+          <div class="article-reading-grid${hasAnnotatedPairs ? "" : " article-reading-grid--solo"}" data-article-layout>
             <article class="article-source-panel editorial-panel">
               <div class="pair-surface-label">Source</div>
               <ol class="source-stream">
@@ -38,16 +40,20 @@ export function renderArticlePage({ siteTitle, assets, basePath, article, siteSt
                   .join("")}
               </ol>
             </article>
-            <section class="article-notes-panel">
-              <ol class="pair-list pair-stream" data-note-stack>
-                ${pairViews
-                  .map((pairView) => renderPairUnit(pairView))
-                  .join("")}
-              </ol>
-              <div class="focus-note-layer" data-focus-layer hidden>
-                <article class="focus-note-card editorial-panel" data-focus-card></article>
-              </div>
-            </section>
+            ${hasAnnotatedPairs
+              ? `
+                <section class="article-notes-panel" data-notes-panel>
+                  <ol class="pair-list pair-stream" data-note-stack>
+                    ${annotatedPairViews
+                      .map((pairView) => renderPairUnit(pairView))
+                      .join("")}
+                  </ol>
+                  <div class="focus-note-layer" data-focus-layer hidden>
+                    <article class="focus-note-card editorial-panel" data-focus-card aria-live="polite"></article>
+                  </div>
+                </section>
+              `
+              : ""}
           </div>
         </section>
       </main>
@@ -211,7 +217,7 @@ function renderPairUnit(pairView) {
   }
 
   const badge = String(annotatedIndex).padStart(2, "0");
-  const idAttr = pair.id ? `id="${escapeHtml(pair.id)}" data-pair-id="${escapeHtml(pair.id)}"` : "";
+  const idAttr = pair.id ? `data-pair-id="${escapeHtml(pair.id)}"` : "";
   const badgeMarkup = pair.id
     ? `<a class="pair-badge" href="#${escapeHtml(pair.id)}" aria-label="Jump to pair ${badge}">${badge}</a>`
     : `<span class="pair-badge" aria-hidden="true">${badge}</span>`;
@@ -241,7 +247,7 @@ function renderSourceSegment(pairView) {
     pair.left.kind === "math"
       ? `pair-source-segment pair-source-segment--math${annotatedIndex ? " pair-source-segment--annotated" : ""}`
       : `pair-source-segment pair-source-segment--code${annotatedIndex ? " pair-source-segment--annotated" : ""}`;
-  const idAttr = pair.id ? `data-pair-id="${escapeHtml(pair.id)}"` : "";
+  const idAttr = pair.id ? `id="${escapeHtml(pair.id)}" data-pair-id="${escapeHtml(pair.id)}"` : "";
   const indexAttr = annotatedIndex ? `data-pair-index="${annotatedIndex}"` : "";
   const markerClassName = annotatedIndex
     ? "pair-source-marker"
