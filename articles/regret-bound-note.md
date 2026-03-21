@@ -7,6 +7,8 @@ tags:
   - bandit
   - proof
 summary: Split the regret upper bound into interpretable pieces.
+links:
+  - "[Multi-armed bandit overview](https://en.wikipedia.org/wiki/Multi-armed_bandit)"
 ---
 
 :::pair id=bound

@@ -41,6 +41,13 @@ def solve(nums):
 \`\`\`
 
 The sentinel zero makes interval subtraction uniform.
+
+- It removes the first-interval special case.
+- It keeps \`prefix[right + 1] - prefix[left]\` universal.
+
+\`\`\`python
+answer = prefix[right + 1] - prefix[left]
+\`\`\`
 :::
 `,
       "utf8",
@@ -110,7 +117,7 @@ print(1)
     assert.match(codeHtml, /class="article-masthead editorial-panel"/);
     assert.match(codeHtml, /class="article-hero-grid"/);
     assert.match(codeHtml, /class="article-summary-panel"/);
-    assert.match(codeHtml, /class="article-meta-strip"/);
+    assert.match(codeHtml, /class="[^"]*article-meta-strip[^"]*"/);
     assert.match(codeHtml, /class="article-meta-chip article-meta-chip--links"/);
     assert.match(codeHtml, /href="https:\/\/en\.wikipedia\.org\/wiki\/Prefix_sum"/);
     assert.match(codeHtml, />Prefix sum overview</);
@@ -132,7 +139,10 @@ print(1)
     assert.match(codeHtml, /class="[^"]*pair-source-segment[^"]*"[^>]*data-lock-target="1"/);
     assert.match(codeHtml, /class="[^"]*pair-note-segment[^"]*"[^>]*data-note-panel/);
     assert.match(codeHtml, /data-pair-index="1"/);
-    assert.match(codeHtml, /<code class="language-python">/);
+    assert.match(codeHtml, /<code class="language-python"><span class="token token--keyword">def<\/span>/);
+    assert.match(codeHtml, /<ul>/);
+    assert.match(codeHtml, /<code>prefix\[right \+ 1\] - prefix\[left\]<\/code>/);
+    assert.match(codeHtml, /<pre class="code-block code-block--python"><code class="language-python">/);
 
     assert.match(mathHtml, /gradient penalty term/);
     assert.match(mathHtml, /katex/);
@@ -144,7 +154,7 @@ print(1)
     assert.match(mathHtml, /class="article-ratio-chart article-ratio-chart--split"/);
     assert.match(mathHtml, /3 articles/);
 
-    assert.match(emptyHtml, /print\(1\)/);
+    assert.match(emptyHtml, /token token--builtin">print/);
     assert.doesNotMatch(emptyHtml, /data-note-panel/);
     assert.doesNotMatch(emptyHtml, /data-lock-target="1" id="only"/);
 

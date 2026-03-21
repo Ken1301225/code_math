@@ -20,6 +20,7 @@ const sourceByIndex = new Map(
 );
 
 let lockedPair = null;
+let layoutFrame = 0;
 
 function clearSourceHighlights() {
   for (const segment of sourceSegments) {
@@ -40,6 +41,7 @@ function setFocusCardMarkup(pair) {
     </div>
     ${noteMarkup}
   `;
+  focusCard.dataset.pairIndex = pair.dataset.pairIndex ?? "";
 }
 
 function setFocusPosition(pair) {
@@ -63,10 +65,12 @@ function setFocusPosition(pair) {
 }
 
 function resetFocusMode() {
+  cancelAnimationFrame(layoutFrame);
   lockedPair = null;
   noteStack?.classList.remove("is-hidden");
   focusLayer?.setAttribute("hidden", "");
   focusCard?.style.removeProperty("--focus-offset");
+  focusCard?.removeAttribute("data-pair-index");
   notesPanel?.style.removeProperty("min-height");
 
   for (const pair of notePairs) {
@@ -76,20 +80,36 @@ function resetFocusMode() {
   clearSourceHighlights();
 }
 
-function applyFocusMode(pair, { focus = false } = {}) {
-  resetFocusMode();
-  lockedPair = pair;
+function scheduleFocusPosition(pair) {
+  cancelAnimationFrame(layoutFrame);
+  layoutFrame = requestAnimationFrame(() => {
+    if (lockedPair === pair) {
+      setFocusPosition(pair);
+    }
+  });
+}
 
+function applyFocusMode(pair, { focus = false } = {}) {
   if (!pair || !focusLayer) {
     return;
   }
 
+  cancelAnimationFrame(layoutFrame);
+  lockedPair = pair;
+
+  for (const item of notePairs) {
+    item.classList.toggle("is-active", item === pair);
+  }
+
+  clearSourceHighlights();
   pair.classList.add("is-active");
   sourceByIndex.get(pair.dataset.pairIndex)?.classList.add("is-active");
   noteStack?.classList.add("is-hidden");
   focusLayer.removeAttribute("hidden");
-  setFocusCardMarkup(pair);
-  setFocusPosition(pair);
+  if (focusCard?.dataset.pairIndex !== pair.dataset.pairIndex) {
+    setFocusCardMarkup(pair);
+  }
+  scheduleFocusPosition(pair);
 
   if (focus) {
     sourceByIndex.get(pair.dataset.pairIndex)?.focus?.({ preventScroll: true });
@@ -170,6 +190,16 @@ for (const segment of annotatedSourceSegments) {
     const pair = notePairByIndex.get(segment.dataset.pairIndex);
     toggleFocus(pair);
   });
+
+  segment.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+
+    event.preventDefault();
+    const pair = notePairByIndex.get(segment.dataset.pairIndex);
+    toggleFocus(pair, { focus: true });
+  });
 }
 
 document.addEventListener("click", (event) => {
@@ -193,7 +223,7 @@ document.addEventListener("click", (event) => {
 
 window.addEventListener("resize", () => {
   if (lockedPair) {
-    applyFocusMode(lockedPair);
+    scheduleFocusPosition(lockedPair);
   }
 });
 

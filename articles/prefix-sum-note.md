@@ -7,6 +7,8 @@ tags:
   - algorithm
   - prefix-sum
 summary: Explain why prefix sums start with a sentinel zero.
+links:
+  - "[Prefix sum overview](https://en.wikipedia.org/wiki/Prefix_sum)"
 ---
 
 :::pair id=intro

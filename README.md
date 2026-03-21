@@ -13,6 +13,8 @@ title: Prefix Sum Walkthrough
 slug: prefix-sum-note
 date: 2026-03-20
 type: code
+links:
+  - "[Prefix sum overview](https://en.wikipedia.org/wiki/Prefix_sum)"
 ---
 
 :::pair id=intro
@@ -27,6 +29,9 @@ The annotation explains the source block.
 
 Use `id=...` when you want a stable anchor for a pair. Omit it when you do not need a
 hash target.
+
+`links` is optional. Write it as a list of Markdown links in front matter when you want
+the masthead to show related resources.
 
 ## Local Commands
 

@@ -8,6 +8,8 @@ tags:
   - monotonic-queue
   - sliding-window
 summary: 用三个配对片段解释为什么双端队列能在线性时间里维护窗口最大值。
+links:
+  - "[Sliding window technique](https://en.wikipedia.org/wiki/Sliding_window_protocol)"
 ---
 
 :::pair id=seed-window

@@ -16,6 +16,9 @@ const markdown = MarkdownIt({
   breaks: true,
   linkify: true,
   typographer: true,
+  highlight(source, language) {
+    return renderHighlightedCodeBlock(source, language);
+  },
 }).use(markdownItKatex);
 
 const SITE_TITLE = "code_math";
@@ -23,6 +26,7 @@ const TYPE_LABELS = {
   code: "代码批注",
   math: "数学证明",
 };
+const TAG_COLORS = ["#6e4a33", "#a96f43", "#cf9556", "#e0b770", "#b1644c", "#8f7f5d"];
 
 export async function buildSite(options = {}) {
   const rootDir = options.rootDir ?? process.cwd();
@@ -158,10 +162,23 @@ function collectSiteStats(listings) {
     code: listings.byType.code.length,
     math: listings.byType.math.length,
   };
+  const tagCounts = Object.entries(listings.byTag)
+    .map(([tag, taggedArticles], index) => ({
+      tag,
+      count: taggedArticles.length,
+      color: TAG_COLORS[index % TAG_COLORS.length],
+    }))
+    .sort((left, right) => right.count - left.count || left.tag.localeCompare(right.tag));
+  const totalTagAssignments = tagCounts.reduce((sum, item) => sum + item.count, 0);
 
   return {
     articleTypeCounts,
     totalArticles: articleTypeCounts.code + articleTypeCounts.math,
+    totalTagAssignments,
+    tagCounts: tagCounts.map((item) => ({
+      ...item,
+      percent: totalTagAssignments ? Math.round((item.count / totalTagAssignments) * 100) : 0,
+    })),
   };
 }
 
@@ -213,12 +230,14 @@ async function readMarkdownFiles(dir) {
 function normalizeArticle({ basePath, filePath, meta, pairs }) {
   const tags = normalizeTags(meta.tags);
   const slug = String(meta.slug);
+  const links = normalizeLinks(meta.links, filePath);
 
   return {
     filePath,
     ...meta,
     slug,
     tags,
+    links,
     href: withBasePath(basePath, `/articles/${encodeURIComponent(slug)}/`),
     typeHref: withBasePath(basePath, `/type/${encodeURIComponent(meta.type)}/`),
     tagHrefs: tags.map((tag) => ({
@@ -241,6 +260,30 @@ function normalizeTags(tags) {
   return [String(tags)];
 }
 
+function normalizeLinks(links, filePath) {
+  if (!links) {
+    return [];
+  }
+
+  const values = Array.isArray(links) ? links : [links];
+  return values.map((value) => parseMarkdownLink(String(value), filePath));
+}
+
+function parseMarkdownLink(source, filePath) {
+  const match = /^\[([^\]]+)\]\((.+)\)$/.exec(source.trim());
+
+  if (!match) {
+    throw new Error(
+      `${filePath}: front matter links entries must use Markdown link syntax like [label](href)`,
+    );
+  }
+
+  return {
+    label: match[1].trim(),
+    href: match[2].trim(),
+  };
+}
+
 function compareArticlesByDateDesc(left, right) {
   return String(right.date).localeCompare(String(left.date));
 }
@@ -251,9 +294,7 @@ function renderMarkdown(source) {
 
 function renderLeftSource(left, language) {
   if (left.kind === "code") {
-    return `<pre><code class="language-${escapeHtml(language || "text")}">${escapeHtml(
-      left.content ?? "",
-    )}</code></pre>`;
+    return renderHighlightedCodeBlock(left.content ?? "", language);
   }
 
   return katex.renderToString(left.content ?? "", {
@@ -416,6 +457,119 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 }
+
+function renderHighlightedCodeBlock(source, language) {
+  const normalizedLanguage = normalizeLanguage(language);
+  const highlighted = highlightCode(source ?? "", normalizedLanguage);
+
+  return `<pre class="code-block code-block--${escapeHtml(
+    normalizedLanguage,
+  )}"><code class="language-${escapeHtml(normalizedLanguage)}">${highlighted}</code></pre>`;
+}
+
+function normalizeLanguage(language) {
+  const value = String(language || "text").toLowerCase();
+  const aliases = {
+    py: "python",
+    js: "javascript",
+    ts: "typescript",
+    shell: "bash",
+    sh: "bash",
+  };
+
+  return aliases[value] ?? value;
+}
+
+function highlightCode(source, language) {
+  if (language === "python") {
+    return applyHighlightRules(source, PYTHON_RULES);
+  }
+
+  if (language === "javascript" || language === "typescript") {
+    return applyHighlightRules(source, JAVASCRIPT_RULES);
+  }
+
+  if (language === "bash") {
+    return applyHighlightRules(source, SHELL_RULES);
+  }
+
+  return escapeHtml(source);
+}
+
+function applyHighlightRules(source, rules) {
+  let index = 0;
+  let html = "";
+
+  while (index < source.length) {
+    let matched = false;
+
+    for (const rule of rules) {
+      rule.regex.lastIndex = index;
+      const match = rule.regex.exec(source);
+      if (!match) {
+        continue;
+      }
+
+      html += `<span class="token token--${rule.kind}">${escapeHtml(match[0])}</span>`;
+      index = rule.regex.lastIndex;
+      matched = true;
+      break;
+    }
+
+    if (!matched) {
+      html += escapeHtml(source[index]);
+      index += 1;
+    }
+  }
+
+  return html;
+}
+
+const PYTHON_RULES = [
+  { kind: "comment", regex: /#[^\n]*/y },
+  { kind: "string", regex: /"""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/y },
+  { kind: "decorator", regex: /@[A-Za-z_][\w.]*/y },
+  { kind: "function", regex: /(?<=\b(?:def|class)\s)[A-Za-z_]\w*/y },
+  {
+    kind: "keyword",
+    regex:
+      /\b(?:and|as|assert|async|await|break|class|continue|def|del|elif|else|except|False|finally|for|from|if|import|in|is|lambda|None|nonlocal|not|or|pass|raise|return|True|try|while|with|yield)\b/y,
+  },
+  {
+    kind: "builtin",
+    regex: /\b(?:abs|all|any|bool|dict|enumerate|float|int|len|list|max|min|print|range|set|str|sum|tuple)\b/y,
+  },
+  { kind: "number", regex: /\b\d+(?:\.\d+)?\b/y },
+  { kind: "operator", regex: /[-+*/%=<>!]+/y },
+  { kind: "punctuation", regex: /[()[\]{},.:]/y },
+];
+
+const JAVASCRIPT_RULES = [
+  { kind: "comment", regex: /\/\/[^\n]*|\/\*[\s\S]*?\*\//y },
+  { kind: "string", regex: /`(?:\\.|[^`\\])*`|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/y },
+  { kind: "function", regex: /(?<=\b(?:function|class|const|let|var)\s)[A-Za-z_$][\w$]*/y },
+  {
+    kind: "keyword",
+    regex:
+      /\b(?:async|await|break|case|catch|class|const|continue|default|else|export|extends|finally|for|from|function|if|import|in|instanceof|let|new|null|return|super|switch|this|throw|true|try|typeof|undefined|var|while|yield)\b/y,
+  },
+  { kind: "number", regex: /\b\d+(?:\.\d+)?\b/y },
+  { kind: "operator", regex: /[-+*/%=<>!&|?:]+/y },
+  { kind: "punctuation", regex: /[()[\]{},.;]/y },
+];
+
+const SHELL_RULES = [
+  { kind: "comment", regex: /#[^\n]*/y },
+  { kind: "string", regex: /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/y },
+  {
+    kind: "keyword",
+    regex: /\b(?:if|then|else|elif|fi|for|do|done|case|esac|while|in|function)\b/y,
+  },
+  { kind: "builtin", regex: /\b(?:cd|echo|export|git|ls|node|npm|python3)\b/y },
+  { kind: "number", regex: /\b\d+(?:\.\d+)?\b/y },
+  { kind: "operator", regex: /[-+*/%=<>!|&]+/y },
+  { kind: "punctuation", regex: /[()[\]{},.;]/y },
+];
 
 function normalizeBasePath(basePath) {
   if (!basePath || basePath === "/") {

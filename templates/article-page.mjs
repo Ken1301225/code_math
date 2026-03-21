@@ -12,30 +12,25 @@ export function renderArticlePage({ siteTitle, basePath, article, siteStats }) {
           </div>
           <div class="article-masthead-body">
             <div class="article-masthead-main">
-              <div class="article-heading">
-                <h1>${escapeHtml(article.title)}</h1>
-                <p class="article-summary">${escapeHtml(article.summary ?? "")}</p>
-              </div>
-              <dl class="article-meta article-meta--hero">
-                <div><dt>Date</dt><dd>${escapeHtml(article.date)}</dd></div>
-                <div><dt>Pairs</dt><dd>${article.pairs.length}</dd></div>
+              <div class="article-hero-grid">
+                <div class="article-heading">
+                  <h1>${escapeHtml(article.title)}</h1>
+                </div>
                 ${
-                  article.tagHrefs.length
-                    ? `<div>
-                        <dt>Tags</dt>
-                        <dd class="article-tag-list">
-                          ${article.tagHrefs
-                            .map(
-                              (tag) => `<a href="${escapeHtml(tag.href)}">${escapeHtml(tag.label)}</a>`,
-                            )
-                            .join("")}
-                        </dd>
-                      </div>`
+                  article.summary
+                    ? `<section class="article-summary-panel">
+                        <div class="pair-surface-label">Summary</div>
+                        <p class="article-summary">${escapeHtml(article.summary)}</p>
+                      </section>`
                     : ""
                 }
-              </dl>
+              </div>
+              ${renderMetaStrip(article)}
             </div>
-            ${renderRatioChart(siteStats)}
+            <div class="article-chart-stack">
+              ${renderTagChart(siteStats)}
+              ${renderRatioChart(siteStats)}
+            </div>
           </div>
         </header>
         <section class="article-body">
@@ -63,6 +58,101 @@ export function renderArticlePage({ siteTitle, basePath, article, siteStats }) {
       </main>
     `,
   });
+}
+
+function renderMetaStrip(article) {
+  const chips = [
+    article.links.length
+      ? `
+        <div class="article-meta-chip article-meta-chip--links">
+          <dt>Links</dt>
+          <dd class="article-link-list">
+            ${article.links.map((link) => renderMetaAnchor(link)).join("")}
+          </dd>
+        </div>
+      `
+      : "",
+    article.tagHrefs.length
+      ? `
+        <div class="article-meta-chip article-meta-chip--tags">
+          <dt>Tags</dt>
+          <dd class="article-tag-list">
+            ${article.tagHrefs.map((tag) => renderMetaAnchor(tag)).join("")}
+          </dd>
+        </div>
+      `
+      : "",
+    `
+      <div class="article-meta-chip">
+        <dt>Date</dt>
+        <dd>${escapeHtml(article.date)}</dd>
+      </div>
+    `,
+    `
+      <div class="article-meta-chip">
+        <dt>Pairs</dt>
+        <dd>${article.pairs.length}</dd>
+      </div>
+    `,
+  ].filter(Boolean);
+
+  return `<dl class="article-meta article-meta-strip">${chips.join("")}</dl>`;
+}
+
+function renderMetaAnchor(link) {
+  const externalAttrs = /^https?:\/\//i.test(link.href)
+    ? ' target="_blank" rel="noreferrer"'
+    : "";
+
+  return `<a href="${escapeHtml(link.href)}"${externalAttrs}>${escapeHtml(link.label)}</a>`;
+}
+
+function renderTagChart(siteStats) {
+  const tagCounts = siteStats?.tagCounts ?? [];
+  if (!tagCounts.length) {
+    return "";
+  }
+
+  const total = siteStats?.totalTagAssignments || 1;
+  let offset = 0;
+  const slices = tagCounts.map((item) => {
+    const start = offset;
+    const span = total ? (item.count / total) * 100 : 0;
+    offset += span;
+    return {
+      ...item,
+      start,
+      end: offset,
+    };
+  });
+  const gradient = slices
+    .map((slice) => `${slice.color} ${slice.start.toFixed(2)}% ${slice.end.toFixed(2)}%`)
+    .join(", ");
+
+  return `
+    <aside class="article-tag-chart article-tag-chart--pie" aria-label="Site-wide tag distribution">
+      <div class="article-ratio-header">
+        <p class="article-ratio-kicker">Tag Spread</p>
+        <p class="article-ratio-total">${total} tag hits</p>
+      </div>
+      <div class="article-tag-chart-body">
+        <div class="article-tag-pie" style="--tag-chart-fill:${escapeHtml(gradient)}" aria-hidden="true"></div>
+        <div class="article-tag-legend">
+          ${slices
+            .map(
+              (slice) => `
+                <div class="article-tag-legend-item" data-tag-name="${escapeHtml(slice.tag)}">
+                  <span class="article-tag-swatch" style="--tag-swatch:${escapeHtml(slice.color)}"></span>
+                  <span class="article-tag-label">${escapeHtml(slice.tag)}</span>
+                  <span class="article-tag-value">${slice.count}</span>
+                </div>
+              `,
+            )
+            .join("")}
+        </div>
+      </div>
+    </aside>
+  `;
 }
 
 function renderRatioChart(siteStats) {
