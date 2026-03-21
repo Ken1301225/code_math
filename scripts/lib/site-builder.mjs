@@ -181,7 +181,7 @@ function collectSiteStats(listings) {
     .sort((left, right) => right.count - left.count || left.tag.localeCompare(right.tag));
   const totalTagAssignments = tagCounts.reduce((sum, item) => sum + item.count, 0);
   const projectGroups = collectProjectGroups(articles);
-  const activityByDate = collectActivityByDate(articles);
+  const activityHeatmap = collectActivityHeatmap(articles);
 
   return {
     articleTypeCounts,
@@ -193,7 +193,7 @@ function collectSiteStats(listings) {
       percent: totalTagAssignments ? Math.round((item.count / totalTagAssignments) * 100) : 0,
     })),
     projectGroups,
-    activityByDate,
+    activityHeatmap,
   };
 }
 
@@ -226,7 +226,7 @@ function collectProjectGroups(articles) {
     .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name));
 }
 
-function collectActivityByDate(articles) {
+function collectActivityHeatmap(articles) {
   const grouped = new Map();
 
   for (const article of articles) {
@@ -234,10 +234,47 @@ function collectActivityByDate(articles) {
     grouped.set(article.date, current + 1);
   }
 
-  return [...grouped.entries()]
-    .map(([date, count]) => ({ date, count }))
-    .sort((left, right) => left.date.localeCompare(right.date))
-    .slice(-6);
+  const today = new Date();
+  const latestArticleDate = articles.reduce((latest, article) => (
+    !latest || article.date > latest ? article.date : latest
+  ), "");
+  const endDate = latestArticleDate && latestArticleDate > formatDate(today)
+    ? parseDateString(latestArticleDate)
+    : today;
+  const startDate = new Date(endDate);
+  startDate.setDate(startDate.getDate() - 29);
+
+  const startWeekday = startDate.getDay();
+  const cells = Array.from({ length: startWeekday }, () => ({ isPadding: true }));
+
+  for (let offset = 0; offset < 30; offset += 1) {
+    const current = new Date(startDate);
+    current.setDate(startDate.getDate() + offset);
+    const date = formatDate(current);
+    const count = grouped.get(date) ?? 0;
+
+    cells.push({
+      date,
+      count,
+      level: count <= 0 ? 0 : Math.min(4, count),
+      isPadding: false,
+    });
+  }
+
+  const weeks = [];
+  for (let index = 0; index < cells.length; index += 7) {
+    const days = cells.slice(index, index + 7);
+    while (days.length < 7) {
+      days.push({ isPadding: true });
+    }
+    weeks.push({ days });
+  }
+
+  return {
+    startDate: formatDate(startDate),
+    endDate: formatDate(endDate),
+    weeks,
+  };
 }
 
 export function collectListings(articles) {
@@ -320,6 +357,18 @@ function normalizeTags(tags) {
   }
 
   return [String(tags)];
+}
+
+function parseDateString(value) {
+  const [year, month, day] = String(value).split("-").map((part) => Number.parseInt(part, 10));
+  return new Date(year, (month || 1) - 1, day || 1);
+}
+
+function formatDate(value) {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function buildArticleRouteSegments(relativeFilePath, slug) {

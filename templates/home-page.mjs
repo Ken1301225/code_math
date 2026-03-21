@@ -1,16 +1,12 @@
 export function renderHomePage({ siteTitle, assets, basePath, intro, guides, latest, siteStats }) {
-  const featured = latest.find((article) => String(article.summary ?? "").trim()) ?? latest[0] ?? null;
-  const archive = latest.filter((article) => article !== featured).slice(0, 4);
   const codeCount = latest.filter((article) => article.type === "code").length;
   const mathCount = latest.filter((article) => article.type === "math").length;
   const totalArticles = siteStats?.totalArticles ?? latest.length;
   const totalPairs = siteStats?.totalPairs ?? latest.reduce((sum, article) => sum + article.pairs.length, 0);
   const projectGroups = (siteStats?.projectGroups ?? []).slice(0, 6);
-  const maxProjectCount = Math.max(...projectGroups.map((item) => item.count), 1);
   const tagSpectrum = (siteStats?.tagCounts ?? []).slice(0, 5);
   const maxTagCount = Math.max(...tagSpectrum.map((item) => item.count), 1);
-  const activity = siteStats?.activityByDate ?? [];
-  const maxActivityCount = Math.max(...activity.map((item) => item.count), 1);
+  const activityHeatmap = siteStats?.activityHeatmap ?? { startDate: "", endDate: "", weeks: [] };
 
   return pageShell({
     siteTitle,
@@ -50,22 +46,17 @@ export function renderHomePage({ siteTitle, assets, basePath, intro, guides, lat
                   <strong>${String(tagSpectrum.length).padStart(2, "0")}</strong>
                 </div>
               </div>
-              <aside class="site-status-panel" aria-label="Site status">
-                <p class="site-status-label">Status</p>
-                <p>code ${String(codeCount).padStart(2, "0")}</p>
-                <p>math ${String(mathCount).padStart(2, "0")}</p>
-                <p>notes live</p>
-              </aside>
+              ${renderModeBalance({ codeCount, mathCount, totalPairs })}
             </section>
             <section class="site-metrics-grid">
-              <article class="stat-panel project-map-panel">
+              <article class="stat-panel theme-map-panel">
                 <div class="stat-head">
                   <h2>Theme Map</h2>
                   <p>${projectGroups.length} active clusters</p>
                 </div>
-                <div class="project-map-grid">
+                <div class="cluster-ledger">
                   ${projectGroups
-                    .map((group) => renderProjectCell(group, maxProjectCount))
+                    .map((group) => renderClusterRow(group))
                     .join("")}
                 </div>
               </article>
@@ -83,13 +74,9 @@ export function renderHomePage({ siteTitle, assets, basePath, intro, guides, lat
               <article class="stat-panel activity-panel">
                 <div class="stat-head">
                   <h2>Release Pulse</h2>
-                  <p>recent update cadence</p>
+                  <p>last 30 days</p>
                 </div>
-                <div class="activity-bars">
-                  ${activity
-                    .map((item) => renderActivityBar(item, maxActivityCount))
-                    .join("")}
-                </div>
+                ${renderActivityHeatmap(activityHeatmap)}
               </article>
             </section>
           </div>
@@ -120,46 +107,71 @@ export function renderHomePage({ siteTitle, assets, basePath, intro, guides, lat
         <section class="home-section home-archive editorial-panel">
           <div class="home-section-head">
             <h2>Archive Board</h2>
-            <p class="home-section-note">Recent notes ranked by pair density and grouped into a compact board.</p>
+            <p class="home-section-note">Recent notes arranged directly in reverse chronological order.</p>
           </div>
-          <div class="archive-board">
-            ${featured ? renderFeaturedArchive(featured, archive) : ""}
-            <div class="archive-side">
-              <div class="archive-density-chart">
-                ${[featured, ...archive]
-                  .filter(Boolean)
-                  .map((article) => renderArchiveDensityBar(article, featured, archive))
-                  .join("")}
-              </div>
-              <ol class="archive-rank-list">
-                ${archive
-                  .map((article, index) => renderArchiveRankItem(article, index + 2))
-                  .join("")}
-              </ol>
-            </div>
-          </div>
+          <ol class="archive-timeline">
+            ${latest
+              .map((article, index) => renderArchiveTimelineItem(article, index + 1))
+              .join("")}
+          </ol>
         </section>
       </main>
     `,
   });
 }
 
-function renderProjectCell(group, maxProjectCount) {
-  const span = Math.min(3, Math.max(1, Math.round((group.count / maxProjectCount) * 3)));
-  const mixCode = group.typeMix.code;
-  const mixMath = group.typeMix.math;
+function renderModeBalance({ codeCount, mathCount, totalPairs }) {
+  const totalTypes = Math.max(codeCount + mathCount, 1);
+  const codeShare = (codeCount / totalTypes).toFixed(3);
+  const mathShare = (mathCount / totalTypes).toFixed(3);
 
   return `
-    <article
-      class="project-map-cell"
-      data-project-name="${escapeHtml(group.name)}"
-      style="--project-span:${span};--project-fill:${(group.count / maxProjectCount).toFixed(3)}"
-    >
-      <p class="project-map-label">${escapeHtml(formatProjectName(group.name))}</p>
-      <p class="project-map-value">${String(group.count).padStart(2, "0")}</p>
-      <div class="project-map-meta">
+    <aside class="mode-balance-panel" aria-label="Mode balance">
+      <div class="mode-balance-head">
+        <p class="mode-balance-kicker">Mode Balance</p>
+        <p class="mode-balance-total">${String(codeCount + mathCount).padStart(2, "0")} notes</p>
+      </div>
+      <div class="mode-balance-track" aria-hidden="true">
+        <span class="mode-balance-segment mode-balance-segment--code" style="--mode-share:${codeShare}"></span>
+        <span class="mode-balance-segment mode-balance-segment--math" style="--mode-share:${mathShare}"></span>
+      </div>
+      <dl class="mode-balance-meta">
+        <div class="mode-balance-item">
+          <dt>code</dt>
+          <dd>${String(codeCount).padStart(2, "0")}</dd>
+        </div>
+        <div class="mode-balance-item">
+          <dt>math</dt>
+          <dd>${String(mathCount).padStart(2, "0")}</dd>
+        </div>
+        <div class="mode-balance-item">
+          <dt>pairs</dt>
+          <dd>${String(totalPairs).padStart(2, "0")}</dd>
+        </div>
+      </dl>
+    </aside>
+  `;
+}
+
+function renderClusterRow(group) {
+  const mixCode = group.typeMix.code;
+  const mixMath = group.typeMix.math;
+  const total = Math.max(mixCode + mixMath, 1);
+
+  return `
+    <article class="cluster-row" data-project-name="${escapeHtml(group.name)}">
+      <div class="cluster-row-head">
+        <p class="cluster-row-name">${escapeHtml(formatProjectName(group.name))}</p>
+        <p class="cluster-row-count">${String(group.count).padStart(2, "0")} notes</p>
+      </div>
+      <div class="cluster-row-meter" aria-hidden="true">
+        <span class="cluster-row-segment cluster-row-segment--code" style="--cluster-share:${(mixCode / total).toFixed(3)}"></span>
+        <span class="cluster-row-segment cluster-row-segment--math" style="--cluster-share:${(mixMath / total).toFixed(3)}"></span>
+      </div>
+      <div class="cluster-row-meta">
         <span>pairs ${String(group.pairCount).padStart(2, "0")}</span>
-        <span>c${mixCode} / m${mixMath}</span>
+        <span>code ${String(mixCode).padStart(2, "0")}</span>
+        <span>math ${String(mixMath).padStart(2, "0")}</span>
       </div>
     </article>
   `;
@@ -180,73 +192,64 @@ function renderTagSpectrumItem(item, maxTagCount) {
   `;
 }
 
-function renderActivityBar(item, maxActivityCount) {
+function renderActivityHeatmap(activityHeatmap) {
+  const startLabel = activityHeatmap.startDate ? formatHeatmapDate(activityHeatmap.startDate) : "Start";
+  const endLabel = activityHeatmap.endDate ? formatHeatmapDate(activityHeatmap.endDate) : "End";
+
   return `
-    <div class="activity-bar">
-      <span
-        class="activity-bar-fill"
-        style="--activity-fill:${(item.count / maxActivityCount).toFixed(3)}"
-      ></span>
-      <span class="activity-bar-date">${escapeHtml(item.date.slice(5))}</span>
-      <span class="activity-bar-value">${item.count}</span>
+    <div class="activity-heatmap">
+      <div class="activity-heatmap-range" aria-label="Heatmap date range">
+        <span class="activity-heatmap-date">${escapeHtml(startLabel)}</span>
+        <span class="activity-heatmap-date activity-heatmap-date--end">${escapeHtml(endLabel)}</span>
+      </div>
+      <div class="activity-heatmap-shell">
+        <div class="activity-heatmap-grid" aria-label="Activity heatmap for the last 30 days">
+          ${activityHeatmap.weeks
+            .map(
+              (week) => `
+                <div class="activity-heatmap-week">
+                  ${week.days.map((day) => renderActivityCell(day)).join("")}
+                </div>
+              `,
+            )
+            .join("")}
+        </div>
+      </div>
     </div>
   `;
 }
 
-function renderFeaturedArchive(article, archive) {
-  const maxPairs = Math.max(article.pairs.length, ...archive.map((item) => item.pairs.length), 1);
-  const projectName = formatProjectName(article.routeSegments.slice(0, -1).join("/") || "root");
+function renderActivityCell(day) {
+  if (!day || day.isPadding) {
+    return `<span class="activity-cell activity-cell--padding" aria-hidden="true"></span>`;
+  }
 
   return `
-    <article class="archive-feature">
-      <p class="card-kicker">featured / ${escapeHtml(article.type)} / ${escapeHtml(article.date)}</p>
-      <h2><a href="${escapeHtml(article.href)}">${escapeHtml(article.title)}</a></h2>
-      <p class="archive-feature-summary">${escapeHtml(article.summary ?? "")}</p>
-      <div class="archive-feature-meta">
-        <span>cluster ${escapeHtml(projectName)}</span>
-        <span>pairs ${String(article.pairs.length).padStart(2, "0")}</span>
-        <span>tags ${String(article.tags.length).padStart(2, "0")}</span>
-      </div>
-      <div class="archive-feature-meter">
-        <span
-          class="archive-feature-fill"
-          style="--archive-fill:${(article.pairs.length / maxPairs).toFixed(3)}"
-        ></span>
-      </div>
-    </article>
+    <span
+      class="activity-cell activity-cell--level-${day.level}"
+      data-activity-date="${escapeHtml(day.date)}"
+      data-activity-count="${day.count}"
+      title="${escapeHtml(`${day.date} · ${day.count} updates`)}"
+      aria-label="${escapeHtml(`${day.date}, ${day.count} updates`)}"
+    ></span>
   `;
 }
 
-function renderArchiveDensityBar(article, featured, archive) {
-  const maxPairs = Math.max(
-    ...(featured ? [featured.pairs.length] : []),
-    ...archive.map((item) => item.pairs.length),
-    1,
-  );
-
-  return `
-    <div class="archive-density-bar">
-      <span
-        class="archive-density-fill"
-        style="--density-fill:${(article.pairs.length / maxPairs).toFixed(3)}"
-      ></span>
-      <span class="archive-density-name">${escapeHtml(article.title)}</span>
-    </div>
-  `;
-}
-
-function renderArchiveRankItem(article, rank) {
+function renderArchiveTimelineItem(article, rank) {
   const projectName = formatProjectName(article.routeSegments.slice(0, -1).join("/") || "root");
 
   return `
-    <li class="archive-rank-item">
-      <span class="archive-rank-index">${String(rank).padStart(2, "0")}</span>
-      <div class="archive-rank-copy">
-        <p class="card-kicker">${escapeHtml(article.type)} / ${escapeHtml(article.date)} / ${escapeHtml(projectName)}</p>
+    <li class="archive-timeline-item">
+      <span class="archive-timeline-index">${String(rank).padStart(2, "0")}</span>
+      <div class="archive-timeline-copy">
+        <p class="card-kicker">${escapeHtml(article.date)} / ${escapeHtml(article.type)} / ${escapeHtml(projectName)}</p>
         <a href="${escapeHtml(article.href)}">${escapeHtml(article.title)}</a>
         <p>${escapeHtml(article.summary ?? "")}</p>
       </div>
-      <span class="archive-rank-pairs">${String(article.pairs.length).padStart(2, "0")}</span>
+      <div class="archive-timeline-meta">
+        <span>pairs ${String(article.pairs.length).padStart(2, "0")}</span>
+        <span>tags ${String(article.tags.length).padStart(2, "0")}</span>
+      </div>
     </li>
   `;
 }
@@ -267,34 +270,6 @@ function pageShell({ siteTitle, pageTitle, assets, basePath, body }) {
 `;
 }
 
-function renderGuideIcon(kind) {
-  if (kind === "code") {
-    return `<span class="guide-glyph guide-glyph--code" aria-hidden="true">&#xf121;</span>`;
-  }
-
-  if (kind === "math") {
-    return `<span class="guide-glyph guide-glyph--math" aria-hidden="true">&#xf1ec;</span>`;
-  }
-
-  return "";
-}
-
-function renderGuideAriaLabel(kind, fallback) {
-  if (kind === "code") {
-    return "Code";
-  }
-
-  if (kind === "math") {
-    return "Math";
-  }
-
-  return fallback ?? "Guide";
-}
-
-function formatProjectName(name) {
-  return name === "root" ? "root" : name;
-}
-
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -310,4 +285,42 @@ function withBasePath(basePath, pathname) {
   }
 
   return `${basePath}${pathname}`;
+}
+
+function renderGuideAriaLabel(kind, fallbackLabel) {
+  if (kind === "code") {
+    return "Code";
+  }
+
+  if (kind === "math") {
+    return "Math";
+  }
+
+  return fallbackLabel ?? "Guide";
+}
+
+function renderGuideIcon(kind) {
+  if (kind === "code") {
+    return `<span class="guide-glyph guide-glyph--code" aria-hidden="true">&#xf121;</span>`;
+  }
+
+  if (kind === "math") {
+    return `<span class="guide-glyph guide-glyph--math" aria-hidden="true">&#xf1ec;</span>`;
+  }
+
+  return `<span class="guide-glyph" aria-hidden="true">&#xf0c1;</span>`;
+}
+
+function formatProjectName(name) {
+  return name
+    .split("/")
+    .filter(Boolean)
+    .join(" / ");
+}
+
+function formatHeatmapDate(value) {
+  const [year, month, day] = String(value).split("-");
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthLabel = monthNames[Math.max(0, Number.parseInt(month, 10) - 1)] ?? month;
+  return `${monthLabel} ${day}, ${year}`;
 }
