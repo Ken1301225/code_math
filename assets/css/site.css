@@ -52,6 +52,10 @@
   --rule: rgba(52, 35, 24, 0.14);
   --panel: rgba(255, 252, 247, 0.88);
   --shadow: 0 22px 60px rgba(43, 28, 15, 0.08);
+  --pixel-border: rgba(52, 35, 24, 0.28);
+  --pixel-border-soft: rgba(52, 35, 24, 0.12);
+  --pixel-shadow: 5px 6px 0 rgba(33, 25, 21, 0.12);
+  --pixel-shadow-strong: 7px 9px 0 rgba(33, 25, 21, 0.16);
   --serif: "LXGW WenKai", "Hack Nerd Font", serif;
   --sans: "Hack Nerd Font", "LXGW WenKai", monospace;
   --mono: "Hack Nerd Font", monospace;
@@ -63,9 +67,31 @@
   box-sizing: border-box;
 }
 
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
 html {
   background:
-    radial-gradient(circle at top, rgba(255, 248, 236, 0.96), transparent 38%),
+    radial-gradient(circle at top, rgba(255, 248, 236, 0.96), transparent 42%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(33, 25, 21, 0.028) 0 1px,
+      transparent 1px 12px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(33, 25, 21, 0.022) 0 1px,
+      transparent 1px 12px
+    ),
     linear-gradient(180deg, #efe6d8 0%, var(--paper) 36%, #efe6d9 100%);
   color: var(--ink);
   font-family: var(--sans);
@@ -143,11 +169,13 @@ canvas {
 }
 
 .editorial-panel {
-  background: var(--panel);
-  border: 1px solid rgba(64, 43, 30, 0.12);
-  border-radius: 24px;
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(10px);
+  background:
+    linear-gradient(180deg, rgba(255, 252, 247, 0.94), rgba(252, 246, 237, 0.9)),
+    radial-gradient(circle at top left, rgba(217, 180, 116, 0.14), transparent 44%);
+  border: 1px solid var(--pixel-border-soft);
+  border-radius: 14px;
+  box-shadow: var(--pixel-shadow);
+  backdrop-filter: none;
 }
 
 .home-grid,
@@ -181,6 +209,215 @@ canvas {
   font-family: var(--sans);
 }
 
+.site-hero.site-header {
+  display: block;
+  align-items: initial;
+  justify-content: initial;
+  gap: 0;
+  margin-bottom: 18px;
+  padding: 18px 20px;
+  border-bottom: 0;
+}
+
+.site-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr) minmax(170px, 220px);
+  gap: 16px;
+  align-items: end;
+}
+
+.site-mark-panel {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.site-kicker {
+  margin: 0;
+  font-size: 0.64rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.site-mark {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 12px 8px;
+  border: 1px solid rgba(87, 60, 42, 0.18);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(33, 25, 21, 0.92), rgba(61, 43, 31, 0.93)),
+    radial-gradient(circle at top left, rgba(217, 180, 116, 0.13), transparent 48%);
+  color: #f8f0e2;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    6px 7px 0 rgba(33, 25, 21, 0.12);
+  font-family: var(--mono);
+  font-size: clamp(2.2rem, 3.8vw, 3.15rem);
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.site-hero-copy {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding-bottom: 2px;
+}
+
+.home-page .site-heading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.home-page .site-intro {
+  max-width: 56rem;
+  font-size: 0.98rem;
+  line-height: 1.82;
+}
+
+.site-status-panel {
+  align-self: stretch;
+  display: grid;
+  align-content: end;
+  gap: 6px;
+  padding: 12px 12px 10px;
+  border: 1px solid rgba(87, 60, 42, 0.16);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 251, 245, 0.96), rgba(249, 241, 231, 0.9)),
+    radial-gradient(circle at top right, rgba(184, 131, 87, 0.08), transparent 56%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.36),
+    4px 5px 0 rgba(33, 25, 21, 0.1);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: rgba(33, 25, 21, 0.84);
+}
+
+.site-status-panel p {
+  margin: 0;
+}
+
+.site-status-label {
+  color: var(--muted);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.home-section-head {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.home-section-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.home-archive-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.home-featured-card {
+  border: 1px solid rgba(87, 60, 42, 0.16);
+  border-radius: 14px;
+  padding: 16px 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 247, 0.96), rgba(251, 244, 235, 0.92)),
+    radial-gradient(circle at top right, rgba(184, 131, 87, 0.08), transparent 44%);
+  box-shadow: var(--pixel-shadow-strong);
+}
+
+.home-featured-card h2 {
+  margin: 8px 0 10px;
+  font-size: clamp(1.25rem, 1.8vw, 1.65rem);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  font-family: var(--mono);
+}
+
+.home-featured-card p {
+  margin: 0.6em 0 0;
+  color: var(--muted);
+}
+
+.card-kicker {
+  margin: 0 0 8px;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.home-card-list > li {
+  padding: 14px 16px;
+}
+
+.home-card-list > li a {
+  font-family: var(--mono);
+}
+
+.home-card-list > li p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.62;
+}
+
+.home-guide h2 {
+  margin-bottom: 10px;
+}
+
+.home-guide .guide-strip {
+  gap: 0;
+  border: 1px solid rgba(87, 60, 42, 0.16);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 252, 247, 0.7);
+  box-shadow: 4px 5px 0 rgba(33, 25, 21, 0.1);
+}
+
+.home-guide .guide-link {
+  border: 0;
+  border-radius: 0;
+  min-height: 88px;
+  box-shadow: none;
+  background:
+    radial-gradient(circle at top, rgba(184, 131, 87, 0.11), transparent 58%),
+    linear-gradient(180deg, rgba(255, 251, 245, 0.96), rgba(249, 241, 231, 0.9));
+}
+
+.home-guide .guide-link + .guide-link {
+  border-left: 1px solid rgba(87, 60, 42, 0.16);
+}
+
+.home-guide .guide-glyph {
+  font-size: 2.35rem;
+}
+
+.home-guide .guide-glyph--math {
+  font-size: 2.25rem;
+}
+
 .card-list,
 .pair-list {
   list-style: none;
@@ -208,13 +445,15 @@ canvas {
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 72px;
-  border-radius: 20px;
-  border: 1px solid rgba(87, 60, 42, 0.1);
+  min-height: 74px;
+  border-radius: 12px;
+  border: 1px solid rgba(87, 60, 42, 0.16);
   background:
-    linear-gradient(180deg, rgba(255, 251, 245, 0.96), rgba(249, 241, 231, 0.92)),
-    radial-gradient(circle at top, rgba(184, 131, 87, 0.08), transparent 52%);
-  box-shadow: 0 12px 26px rgba(54, 34, 18, 0.06);
+    linear-gradient(180deg, rgba(255, 251, 245, 0.96), rgba(249, 241, 231, 0.9)),
+    radial-gradient(circle at top, rgba(184, 131, 87, 0.11), transparent 56%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.36),
+    4px 5px 0 rgba(33, 25, 21, 0.1);
   text-decoration: none;
 }
 
@@ -224,7 +463,7 @@ canvas {
   justify-content: center;
   min-width: 1em;
   font-family: "Hack Nerd Font", monospace;
-  font-size: 2rem;
+  font-size: 2.05rem;
   line-height: 1;
   font-weight: 400;
   color: var(--accent);
@@ -235,14 +474,14 @@ canvas {
 }
 
 .guide-glyph--math {
-  font-size: 1.8rem;
-  letter-spacing: -0.08em;
+  font-size: 1.95rem;
+  letter-spacing: -0.02em;
 }
 
 .guide-strip {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px;
   width: 100%;
 }
 
@@ -690,7 +929,7 @@ canvas {
 .pair-source-body code {
   margin: 0;
   font-family: var(--mono);
-  font-size: clamp(0.88rem, 0.96vw, 0.96rem);
+  font-size: clamp(0.82rem, 0.92vw, 0.94rem);
   line-height: 1.58;
 }
 
@@ -1002,6 +1241,28 @@ canvas {
 }
 
 @media (max-width: 900px) {
+  .site-hero.site-header {
+    padding: 16px;
+  }
+
+  .site-hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+  }
+
+  .site-mark {
+    width: fit-content;
+  }
+
+  .site-status-panel {
+    width: min(100%, 340px);
+  }
+
+  .home-archive-grid {
+    grid-template-columns: 1fr;
+  }
+
   .article-masthead {
     padding: 16px;
   }

@@ -21,6 +21,14 @@ let activePair = null;
 let layoutFrame = 0;
 let autoFocusFrame = 0;
 
+function getActiveAnnotatedIndex() {
+  if (!activePair?.dataset.pairIndex) {
+    return -1;
+  }
+
+  return Math.max(0, Number.parseInt(activePair.dataset.pairIndex, 10) - 1);
+}
+
 function clearSourceHighlights() {
   for (const segment of sourceSegments) {
     segment.classList.remove("is-active");
@@ -164,6 +172,9 @@ function findCenteredPair() {
     {
       viewportHeight: window.innerHeight,
       focusLine: window.innerHeight / 2,
+      activeIndex: getActiveAnnotatedIndex(),
+      retainTop: window.innerHeight * 0.34,
+      retainBottom: window.innerHeight * 0.68,
     },
   );
 

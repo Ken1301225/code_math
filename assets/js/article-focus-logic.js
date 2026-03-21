@@ -5,6 +5,9 @@ export function pickAutoFocusIndex(rects, options = {}) {
 
   const viewportHeight = options.viewportHeight ?? 0;
   const focusLine = options.focusLine ?? viewportHeight / 2;
+  const retainTop = options.retainTop ?? viewportHeight * 0.34;
+  const retainBottom = options.retainBottom ?? viewportHeight * 0.68;
+  const activeIndex = Number.isInteger(options.activeIndex) ? options.activeIndex : -1;
 
   const scoredRects = rects.map((rect, index) => {
     const visibleTop = Math.max(rect.top, 0);
@@ -18,12 +21,25 @@ export function pickAutoFocusIndex(rects, options = {}) {
 
     return {
       index,
+      top: rect.top,
+      bottom: rect.bottom,
       visibleHeight,
       visibleRatio,
       coversFocusLine,
       centerDistance,
     };
   });
+
+  const activeRect = scoredRects[activeIndex];
+  const activeOverlapsRetentionBand =
+    activeRect &&
+    activeRect.visibleHeight > 0 &&
+    activeRect.bottom > retainTop &&
+    activeRect.top < retainBottom;
+
+  if (activeOverlapsRetentionBand) {
+    return activeIndex;
+  }
 
   const visibleRects = scoredRects.filter((rect) => rect.visibleHeight > 0);
   const candidates = visibleRects.length > 0 ? visibleRects : scoredRects;
