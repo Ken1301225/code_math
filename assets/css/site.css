@@ -1482,11 +1482,11 @@ canvas {
 .code-block {
   margin: 0;
   padding: 13px 15px;
-  border: 1px solid rgba(87, 60, 42, 0.04);
+  border: 1px solid rgba(87, 60, 42, 0.025);
   border-radius: 18px;
   background:
-    linear-gradient(180deg, rgba(249, 243, 233, 0.64), rgba(255, 252, 247, 0.58)),
-    radial-gradient(circle at top right, rgba(217, 180, 116, 0.04), transparent 40%);
+    linear-gradient(180deg, rgba(250, 245, 236, 0.38), rgba(255, 252, 247, 0.28)),
+    radial-gradient(circle at top right, rgba(217, 180, 116, 0.02), transparent 42%);
   color: #2f2218;
   box-shadow: none;
 }
