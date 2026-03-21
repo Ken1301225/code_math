@@ -232,10 +232,10 @@ canvas {
 
 .article-hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(240px, 0.92fr);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
   align-items: start;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .article-heading {
@@ -249,18 +249,9 @@ canvas {
   letter-spacing: -0.045em;
 }
 
-.article-summary-panel {
-  min-width: 0;
-  padding: 12px 14px;
-  border: 1px solid rgba(87, 60, 42, 0.1);
-  border-radius: 18px;
-  background:
-    linear-gradient(180deg, rgba(255, 252, 247, 0.92), rgba(252, 244, 233, 0.9)),
-    radial-gradient(circle at top right, rgba(184, 131, 87, 0.08), transparent 42%);
-}
-
 .article-summary {
-  margin: 0;
+  margin: 12px 0 0;
+  max-width: 56rem;
   font-size: 0.98rem;
   line-height: 1.78;
   color: var(--muted);
@@ -533,7 +524,7 @@ canvas {
   display: grid;
   grid-template-columns: 36px minmax(0, 1fr);
   gap: 14px;
-  padding: 18px 0;
+  padding: 10px 0;
   transition:
     background-color 180ms ease,
     color 180ms ease,
@@ -654,7 +645,7 @@ canvas {
 
 .pair-stream {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .article-notes-panel {
@@ -868,7 +859,7 @@ canvas {
 
   .article-hero-grid {
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 0;
   }
 
   .article-chart-stack {

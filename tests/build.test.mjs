@@ -116,7 +116,11 @@ print(1)
     assert.match(codeHtml, /src="\/code_math\/assets\/js\/article\.js"/);
     assert.match(codeHtml, /class="article-masthead editorial-panel"/);
     assert.match(codeHtml, /class="article-hero-grid"/);
-    assert.match(codeHtml, /class="article-summary-panel"/);
+    assert.doesNotMatch(codeHtml, /class="article-summary-panel"/);
+    assert.match(
+      codeHtml,
+      /<div class="article-heading">\s*<h1>Prefix Sum Walkthrough<\/h1>\s*<p class="article-summary">Explain why prefix sums start with a sentinel zero\.<\/p>/,
+    );
     assert.match(codeHtml, /class="[^"]*article-meta-strip[^"]*"/);
     assert.match(codeHtml, /class="article-meta-chip article-meta-chip--links"/);
     assert.match(codeHtml, /href="https:\/\/en\.wikipedia\.org\/wiki\/Prefix_sum"/);

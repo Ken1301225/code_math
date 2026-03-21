@@ -15,15 +15,8 @@ export function renderArticlePage({ siteTitle, basePath, article, siteStats }) {
               <div class="article-hero-grid">
                 <div class="article-heading">
                   <h1>${escapeHtml(article.title)}</h1>
+                  ${article.summary ? `<p class="article-summary">${escapeHtml(article.summary)}</p>` : ""}
                 </div>
-                ${
-                  article.summary
-                    ? `<section class="article-summary-panel">
-                        <div class="pair-surface-label">Summary</div>
-                        <p class="article-summary">${escapeHtml(article.summary)}</p>
-                      </section>`
-                    : ""
-                }
               </div>
               ${renderMetaStrip(article)}
             </div>
