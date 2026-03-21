@@ -27,7 +27,6 @@ export function renderHomePage({ siteTitle, assets, basePath, intro, guides, lat
                 </div>
               </div>
               <h1 class="site-heading">${escapeHtml(siteTitle)}</h1>
-              <p class="site-intro">${escapeHtml(intro)}</p>
               <div class="site-summary-strip" aria-label="Site summary">
                 <div class="summary-chip">
                   <span class="summary-label">articles</span>
