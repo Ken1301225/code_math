@@ -18,12 +18,42 @@ test("buildSite renders homepage, article pages, and listing pages", async () =>
   try {
     await cp(projectRoot, articlesDir, { recursive: true });
     await writeFile(
+      path.join(articlesDir, "example-code.md"),
+      `---
+title: Prefix Sum Walkthrough
+slug: prefix-sum-note
+date: 2026-03-20
+type: code
+tags:
+  - algorithm
+  - prefix-sum
+summary: Explain why prefix sums start with a sentinel zero.
+links:
+  - "[Prefix sum overview](https://en.wikipedia.org/wiki/Prefix_sum)"
+---
+
+:::pair id=intro
+\`\`\`python
+def solve(nums):
+    prefix = [0]
+    for x in nums:
+        prefix.append(prefix[-1] + x)
+\`\`\`
+
+The sentinel zero makes interval subtraction uniform.
+:::
+`,
+      "utf8",
+    );
+    await writeFile(
       path.join(articlesDir, "empty-note.md"),
       `---
 title: Empty Note
 slug: empty-note
 date: 2026-03-20
 type: code
+tags:
+  - algorithm
 ---
 
 :::pair id=only
@@ -78,7 +108,15 @@ print(1)
     assert.match(codeHtml, /href="\/code_math\/assets\/css\/site\.css"/);
     assert.match(codeHtml, /src="\/code_math\/assets\/js\/article\.js"/);
     assert.match(codeHtml, /class="article-masthead editorial-panel"/);
-    assert.match(codeHtml, /class="article-heading"/);
+    assert.match(codeHtml, /class="article-hero-grid"/);
+    assert.match(codeHtml, /class="article-summary-panel"/);
+    assert.match(codeHtml, /class="article-meta-strip"/);
+    assert.match(codeHtml, /class="article-meta-chip article-meta-chip--links"/);
+    assert.match(codeHtml, /href="https:\/\/en\.wikipedia\.org\/wiki\/Prefix_sum"/);
+    assert.match(codeHtml, />Prefix sum overview</);
+    assert.match(codeHtml, /class="article-chart-stack"/);
+    assert.match(codeHtml, /class="article-tag-chart article-tag-chart--pie"/);
+    assert.match(codeHtml, /data-tag-name="algorithm"/);
     assert.match(codeHtml, /class="article-ratio-chart article-ratio-chart--split"/);
     assert.match(codeHtml, /class="article-ratio-band"/);
     assert.match(codeHtml, /data-ratio-kind="code"/);
@@ -101,6 +139,8 @@ print(1)
     assert.match(mathHtml, /href="\/code_math\/assets\/css\/site\.css"/);
     assert.match(mathHtml, /href="\/code_math\/assets\/vendor\/katex\/katex\.min\.css"/);
     assert.match(mathHtml, /class="[^"]*pair-source-segment--math[^"]*"/);
+    assert.match(mathHtml, /class="article-chart-stack"/);
+    assert.match(mathHtml, /class="article-tag-chart article-tag-chart--pie"/);
     assert.match(mathHtml, /class="article-ratio-chart article-ratio-chart--split"/);
     assert.match(mathHtml, /3 articles/);
 
