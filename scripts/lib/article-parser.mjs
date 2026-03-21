@@ -40,7 +40,7 @@ export function parsePairBlock(rawPair, context = {}) {
 
   const opener = lines[index].trim();
 
-  if (/^```[^\s]*\s*$/.test(opener)) {
+  if (/^```(?:\s*\S+)?\s*$/.test(opener)) {
     return buildCodePair(lines, index, { filePath, id });
   }
 
@@ -210,7 +210,8 @@ function findPairClosingIndex(lines, startIndex) {
   let inDisplayMathBlock = false;
 
   for (let index = startIndex; index < lines.length; index += 1) {
-    const trimmed = lines[index].trim();
+    const line = lines[index];
+    const trimmed = line.trim();
 
     if (inFencedCodeBlock) {
       if (trimmed === "```") {
@@ -220,7 +221,7 @@ function findPairClosingIndex(lines, startIndex) {
     }
 
     if (inDisplayMathBlock) {
-      if (trimmed === "$$") {
+      if (trimmed === "$$" || endsDisplayMathBlock(trimmed)) {
         inDisplayMathBlock = false;
       }
       continue;
@@ -231,7 +232,7 @@ function findPairClosingIndex(lines, startIndex) {
       continue;
     }
 
-    if (trimmed === "$$") {
+    if (trimmed === "$$" || startsDisplayMathBlock(trimmed)) {
       inDisplayMathBlock = true;
       continue;
     }
@@ -250,6 +251,14 @@ function findPairClosingIndex(lines, startIndex) {
     inFencedCodeBlock,
     inDisplayMathBlock,
   };
+}
+
+function startsDisplayMathBlock(trimmed) {
+  return trimmed.startsWith("$$") && trimmed !== "$$" && !trimmed.endsWith("$$");
+}
+
+function endsDisplayMathBlock(trimmed) {
+  return trimmed.endsWith("$$") && trimmed !== "$$" && !trimmed.startsWith("$$");
 }
 
 function formatPairId(id) {

@@ -1,3 +1,17 @@
+@font-face {
+  font-family: "Hack Nerd Font";
+  src: url("../fonts/HackNerdFont-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "LXGW WenKai";
+  src: url("../fonts/LXGWWenKai.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+}
+
 :root {
   color-scheme: light;
   --paper: #f4efe6;
@@ -10,10 +24,9 @@
   --rule: rgba(52, 35, 24, 0.14);
   --panel: rgba(255, 252, 247, 0.88);
   --shadow: 0 22px 60px rgba(43, 28, 15, 0.08);
-  --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Noto Serif SC",
-    "Songti SC", serif;
-  --sans: "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --mono: "SFMono-Regular", "Cascadia Code", "IBM Plex Mono", Consolas, monospace;
+  --serif: "LXGW WenKai", "Hack Nerd Font", serif;
+  --sans: "Hack Nerd Font", "LXGW WenKai", monospace;
+  --mono: "Hack Nerd Font", monospace;
 }
 
 *,
@@ -27,7 +40,7 @@ html {
     radial-gradient(circle at top, rgba(255, 248, 236, 0.96), transparent 38%),
     linear-gradient(180deg, #efe6d8 0%, var(--paper) 36%, #efe6d9 100%);
   color: var(--ink);
-  font-family: var(--serif);
+  font-family: var(--sans);
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -86,9 +99,12 @@ canvas {
   line-height: 1.05;
 }
 
-.site-header h1 {
-  font-size: clamp(2rem, 4vw, 3.6rem);
-  letter-spacing: -0.03em;
+.site-heading {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  letter-spacing: -0.04em;
+  text-transform: lowercase;
 }
 
 .site-intro {
@@ -110,6 +126,11 @@ canvas {
 .listing-grid {
   display: grid;
   gap: 18px;
+}
+
+.home-guide {
+  display: grid;
+  gap: 14px;
 }
 
 .home-section,
@@ -157,19 +178,44 @@ canvas {
 .guide-link {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-weight: 600;
+  justify-content: center;
+  width: 100%;
+  min-height: 72px;
+  border-radius: 20px;
+  border: 1px solid rgba(87, 60, 42, 0.1);
+  background:
+    linear-gradient(180deg, rgba(255, 251, 245, 0.96), rgba(249, 241, 231, 0.92)),
+    radial-gradient(circle at top, rgba(184, 131, 87, 0.08), transparent 52%);
+  box-shadow: 0 12px 26px rgba(54, 34, 18, 0.06);
+  text-decoration: none;
 }
 
-.guide-icon {
-  width: 20px;
-  height: 20px;
-  flex: 0 0 auto;
+.guide-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1em;
+  font-family: "Hack Nerd Font", monospace;
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 400;
   color: var(--accent);
 }
 
-.guide-link--math .guide-icon {
+.guide-link--math .guide-glyph {
   color: var(--accent-2);
+}
+
+.guide-glyph--math {
+  font-size: 1.8rem;
+  letter-spacing: -0.08em;
+}
+
+.guide-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
 }
 
 .card-list span,
@@ -182,7 +228,7 @@ canvas {
 
 .article-masthead {
   margin-bottom: 20px;
-  padding: 22px 24px 20px;
+  padding: 16px 22px 15px;
   background:
     linear-gradient(180deg, rgba(255, 251, 244, 0.98), rgba(249, 241, 231, 0.92)),
     radial-gradient(circle at top left, rgba(184, 131, 87, 0.08), transparent 36%);
@@ -192,18 +238,21 @@ canvas {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 18px;
+  margin-bottom: 0;
 }
 
 .article-masthead-body {
   display: grid;
-  grid-template-columns: minmax(0, 1.72fr) minmax(240px, 278px);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1.52fr) minmax(300px, 360px);
+  gap: 14px;
   align-items: start;
 }
 
 .article-masthead-main {
   min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 22px;
 }
 
 .article-kicker {
@@ -235,24 +284,26 @@ canvas {
   grid-template-columns: minmax(0, 1fr);
   gap: 0;
   align-items: start;
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 .article-heading {
   min-width: 0;
+  display: grid;
+  gap: 20px;
 }
 
 .article-masthead h1 {
   margin: 0;
-  font-size: clamp(2.1rem, 4vw, 4.1rem);
-  line-height: 0.96;
+  font-size: clamp(2rem, 3.6vw, 3.7rem);
+  line-height: 0.98;
   letter-spacing: -0.045em;
 }
 
 .article-summary {
-  margin: 12px 0 0;
-  max-width: 56rem;
-  font-size: 0.98rem;
+  margin: 0;
+  max-width: 52rem;
+  font-size: 0.94rem;
   line-height: 1.78;
   color: var(--muted);
 }
@@ -266,22 +317,39 @@ canvas {
 .article-meta-strip {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 0;
+  padding: 16px 0 0;
+  border-top: 1px solid rgba(87, 60, 42, 0.08);
 }
 
 .article-meta-chip {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
-  min-height: 38px;
-  padding: 8px 12px;
-  border: 1px solid rgba(87, 60, 42, 0.12);
-  border-radius: 999px;
-  background: rgba(255, 251, 244, 0.9);
+  min-height: 0;
+  padding: 8px 14px 8px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  position: relative;
+}
+
+.article-meta-chip:not(:last-child) {
+  margin-right: 14px;
+}
+
+.article-meta-chip:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 9px;
+  right: -8px;
+  bottom: 9px;
+  width: 1px;
+  background: rgba(87, 60, 42, 0.1);
 }
 
 .article-meta-chip dt {
-  font-size: 0.63rem;
+  font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   color: var(--muted);
@@ -290,7 +358,7 @@ canvas {
 .article-meta-chip dd {
   margin: 0;
   color: var(--ink);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
 }
 
 .article-tag-list,
@@ -305,12 +373,12 @@ canvas {
 .article-link-list a {
   display: inline-flex;
   align-items: center;
-  min-height: 26px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(255, 246, 235, 0.9);
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(255, 246, 235, 0.65);
   text-decoration: none;
-  box-shadow: inset 0 0 0 1px rgba(143, 93, 53, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(143, 93, 53, 0.08);
 }
 
 .article-link-list a {
@@ -322,8 +390,12 @@ canvas {
 
 .article-chart-stack {
   display: grid;
-  gap: 14px;
-  justify-self: stretch;
+  gap: 10px;
+  justify-self: start;
+  align-self: start;
+  width: min(100%, 332px);
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .article-tag-chart,
@@ -331,7 +403,7 @@ canvas {
   width: 100%;
   padding: 12px 14px;
   border: 1px solid rgba(87, 60, 42, 0.1);
-  border-radius: 22px;
+  border-radius: 16px;
   background:
     linear-gradient(180deg, rgba(255, 252, 247, 0.96), rgba(251, 244, 235, 0.92)),
     radial-gradient(circle at top right, rgba(184, 131, 87, 0.08), transparent 44%);
@@ -341,8 +413,8 @@ canvas {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 7px;
 }
 
 .article-ratio-kicker,
@@ -365,18 +437,18 @@ canvas {
 .article-ratio-total {
   margin: 0;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.76rem;
 }
 
 .article-tag-chart-body {
   display: grid;
-  grid-template-columns: 92px minmax(0, 1fr);
+  grid-template-columns: 136px minmax(0, 1fr);
   gap: 14px;
-  align-items: center;
+  align-items: start;
 }
 
 .article-tag-pie {
-  width: 92px;
+  width: 132px;
   aspect-ratio: 1;
   border-radius: 50%;
   background:
@@ -390,11 +462,11 @@ canvas {
 .article-tag-legend,
 .article-ratio-legend {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .article-ratio-legend {
-  margin-top: 10px;
+  margin-top: 7px;
 }
 
 .article-tag-legend-item,
@@ -403,6 +475,14 @@ canvas {
   grid-template-columns: 10px 1fr auto;
   align-items: center;
   gap: 8px;
+}
+
+[data-tag-name="..."].article-tag-legend-item {
+  opacity: 0.74;
+}
+
+[data-tag-name="..."] .article-tag-swatch {
+  box-shadow: inset 0 0 0 1px rgba(143, 93, 53, 0.18);
 }
 
 .article-tag-swatch,
@@ -426,7 +506,7 @@ canvas {
 
 .article-tag-label,
 .article-ratio-label {
-  font-size: 0.74rem;
+  font-size: 0.64rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -434,14 +514,14 @@ canvas {
 
 .article-tag-value,
 .article-ratio-value {
-  font-size: 0.88rem;
+  font-size: 0.78rem;
   color: var(--ink);
 }
 
 .article-ratio-band {
   display: flex;
   width: 100%;
-  height: 18px;
+  height: 14px;
   overflow: hidden;
   border-radius: 999px;
   box-shadow:
@@ -466,6 +546,10 @@ canvas {
 .article-meta dd {
   margin: 5px 0 0;
   font-size: 0.88rem;
+}
+
+.article-meta-strip .article-meta-chip dd {
+  margin: 0;
 }
 
 .article-tag-list {
@@ -526,13 +610,10 @@ canvas {
   gap: 14px;
   padding: 10px 0;
   transition:
-    background-color 180ms ease,
-    color 180ms ease,
-    transform 180ms ease;
-}
-
-.pair-source-segment--annotated {
-  cursor: pointer;
+    background-color 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 240ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .pair-source-segment + .pair-source-segment {
@@ -541,6 +622,7 @@ canvas {
 
 .pair-source-segment.is-active {
   background: rgba(255, 247, 235, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(143, 93, 53, 0.08);
 }
 
 .pair-source-marker {
@@ -557,19 +639,31 @@ canvas {
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.08em;
+  transition:
+    background-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pair-source-marker--silent {
+  border-color: rgba(143, 93, 53, 0.08);
+  background: transparent;
+  box-shadow: none;
 }
 
 .pair-source-segment.is-active .pair-source-marker {
   background: var(--accent);
   color: #fffaf3;
+  transform: scale(1.04);
 }
 
 .pair-source-body pre,
 .pair-source-body code {
   margin: 0;
   font-family: var(--mono);
-  font-size: clamp(0.98rem, 1.1vw, 1.06rem);
-  line-height: 1.72;
+  font-size: clamp(0.88rem, 0.96vw, 0.96rem);
+  line-height: 1.58;
 }
 
 .pair-source-body pre,
@@ -582,7 +676,7 @@ canvas {
 
 .code-block {
   margin: 0;
-  padding: 16px 18px;
+  padding: 13px 15px;
   border: 1px solid rgba(87, 60, 42, 0.1);
   border-radius: 18px;
   background:
@@ -707,8 +801,9 @@ canvas {
     radial-gradient(circle at top right, rgba(143, 93, 53, 0.05), transparent 32%);
   box-shadow: 0 10px 26px rgba(64, 39, 17, 0.05);
   transition:
-    border-color 180ms ease,
-    box-shadow 180ms ease;
+    border-color 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 200ms ease;
 }
 
 .pair-note-segment--compact .pair-explanation {
@@ -745,6 +840,7 @@ canvas {
   inset: 0 0 auto 0;
   z-index: 2;
   pointer-events: none;
+  transition: opacity 180ms ease;
 }
 
 .focus-note-card {
@@ -753,7 +849,9 @@ canvas {
   gap: 16px;
   align-items: start;
   transform: translate3d(0, var(--focus-offset, 0px), 0);
-  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease;
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -769,6 +867,21 @@ canvas {
 .pair-explanation {
   font-size: 1rem;
   color: rgba(42, 29, 20, 0.92);
+}
+
+.pair-explanation .katex,
+.pair-source-body .katex {
+  font-size: 1em;
+}
+
+.pair-explanation .katex .katex-mathml,
+.pair-source-body .katex .katex-mathml {
+  display: none !important;
+}
+
+.pair-explanation .katex .katex-html,
+.pair-source-body .katex .katex-html {
+  display: inline-block;
 }
 
 .pair-explanation h1,
@@ -787,6 +900,19 @@ canvas {
 .pair-explanation pre,
 .pair-explanation table {
   margin: 0.8em 0;
+}
+
+.pair-explanation .commentary-math-block {
+  margin: 0.8em 0;
+}
+
+.pair-explanation .commentary-math-block .katex {
+  display: block;
+}
+
+.pair-explanation .commentary-math-block .katex-display {
+  margin: 0;
+  overflow: visible;
 }
 
 .pair-explanation ul,
@@ -849,12 +975,17 @@ canvas {
 
 @media (max-width: 900px) {
   .article-masthead {
-    padding: 18px;
+    padding: 16px;
   }
 
   .article-masthead-body {
     grid-template-columns: 1fr;
     justify-items: start;
+    align-items: start;
+  }
+
+  .article-masthead-main {
+    gap: 18px;
   }
 
   .article-hero-grid {
@@ -864,6 +995,8 @@ canvas {
 
   .article-chart-stack {
     width: min(100%, 320px);
+    align-self: start;
+    padding-top: 0;
   }
 
   .article-reading-grid {

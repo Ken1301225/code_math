@@ -12,7 +12,7 @@ import { renderArticlePage } from "../../templates/article-page.mjs";
 import { renderListingPage } from "../../templates/listing-page.mjs";
 
 const markdown = MarkdownIt({
-  html: false,
+  html: true,
   breaks: true,
   linkify: true,
   typographer: true,
@@ -38,12 +38,13 @@ export async function buildSite(options = {}) {
 
   const sourceFiles = await readMarkdownFiles(articlesDir);
   const articles = [];
-  const slugs = new Set();
+  const routeKeys = new Set();
 
   for (const filePath of sourceFiles) {
     const rawSource = await readFile(filePath, "utf8");
     const parsed = parseArticleFile(filePath, rawSource);
     const pairBlueprints = extractPairBlueprints(rawSource);
+    const routeSegments = buildArticleRouteSegments(path.relative(articlesDir, filePath), parsed.meta.slug);
 
     if (pairBlueprints.length !== parsed.pairs.length) {
       throw new Error(`${filePath}: parser output does not match pair block count`);
@@ -52,6 +53,7 @@ export async function buildSite(options = {}) {
     const article = normalizeArticle({
       basePath,
       filePath,
+      routeSegments,
       meta: parsed.meta,
       pairs: parsed.pairs.map((pair, index) => ({
         ...pair,
@@ -61,11 +63,11 @@ export async function buildSite(options = {}) {
       })),
     });
 
-    if (slugs.has(article.slug)) {
-      throw new Error(`${filePath}: duplicate slug "${article.slug}"`);
+    if (routeKeys.has(article.routeKey)) {
+      throw new Error(`${filePath}: duplicate article route "${article.routeKey}"`);
     }
 
-    slugs.add(article.slug);
+    routeKeys.add(article.routeKey);
 
     const pairIds = new Set();
     for (const pair of article.pairs) {
@@ -106,7 +108,7 @@ export async function buildSite(options = {}) {
 
   for (const article of articles) {
     await writeOutput(
-      path.join(outDir, "articles", encodeURIComponent(article.slug), "index.html"),
+      path.join(outDir, "articles", ...article.outputRouteSegments, "index.html"),
       renderArticlePage({
         siteTitle: SITE_TITLE,
         basePath,
@@ -227,18 +229,22 @@ async function readMarkdownFiles(dir) {
   return files;
 }
 
-function normalizeArticle({ basePath, filePath, meta, pairs }) {
+function normalizeArticle({ basePath, filePath, routeSegments, meta, pairs }) {
   const tags = normalizeTags(meta.tags);
   const slug = String(meta.slug);
   const links = normalizeLinks(meta.links, filePath);
+  const outputRouteSegments = routeSegments.map((segment) => encodeURIComponent(segment));
 
   return {
     filePath,
     ...meta,
     slug,
+    routeKey: routeSegments.join("/"),
+    routeSegments,
+    outputRouteSegments,
     tags,
     links,
-    href: withBasePath(basePath, `/articles/${encodeURIComponent(slug)}/`),
+    href: withBasePath(basePath, `/articles/${outputRouteSegments.join("/")}/`),
     typeHref: withBasePath(basePath, `/type/${encodeURIComponent(meta.type)}/`),
     tagHrefs: tags.map((tag) => ({
       label: tag,
@@ -258,6 +264,29 @@ function normalizeTags(tags) {
   }
 
   return [String(tags)];
+}
+
+function buildArticleRouteSegments(relativeFilePath, slug) {
+  const relativeDir = path.dirname(relativeFilePath);
+  const dirSegments = relativeDir === "." ? [] : relativeDir.split(path.sep).filter(Boolean);
+  const slugSegments = String(slug)
+    .split("/")
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+
+  if (startsWithSegments(slugSegments, dirSegments)) {
+    return slugSegments;
+  }
+
+  return [...dirSegments, ...slugSegments];
+}
+
+function startsWithSegments(segments, prefix) {
+  if (prefix.length > segments.length) {
+    return false;
+  }
+
+  return prefix.every((segment, index) => segments[index] === segment);
 }
 
 function normalizeLinks(links, filePath) {
@@ -289,7 +318,101 @@ function compareArticlesByDateDesc(left, right) {
 }
 
 function renderMarkdown(source) {
-  return markdown.render(source ?? "");
+  return markdown.render(preprocessCommentaryMarkdown(source ?? ""));
+}
+
+function preprocessCommentaryMarkdown(source) {
+  const lines = source.split(/\r?\n/);
+  const normalized = [];
+  let inFencedCodeBlock = false;
+  let inDisplayMathBlock = false;
+  let mathLines = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith("```")) {
+      inFencedCodeBlock = !inFencedCodeBlock;
+      normalized.push(line);
+      continue;
+    }
+
+    if (inFencedCodeBlock) {
+      normalized.push(line);
+      continue;
+    }
+
+    if (!inDisplayMathBlock) {
+      const singleLineDisplayMath = trimmed.match(/^\$\$(.+)\$\$$/);
+      if (singleLineDisplayMath) {
+        appendRenderedMathBlock(normalized, singleLineDisplayMath[1].trim());
+        continue;
+      }
+
+      if (trimmed === "$$") {
+        inDisplayMathBlock = true;
+        mathLines = [];
+        continue;
+      }
+
+      const displayMathStart = line.match(/^(\s*)\$\$(.+)$/);
+      if (displayMathStart) {
+        inDisplayMathBlock = true;
+        mathLines = [displayMathStart[2].trimStart()];
+        continue;
+      }
+    }
+
+    if (inDisplayMathBlock) {
+      if (trimmed === "$$") {
+        appendRenderedMathBlock(normalized, mathLines.join("\n").trim());
+        inDisplayMathBlock = false;
+        mathLines = [];
+        continue;
+      }
+
+      const displayMathEnd = line.match(/^(.*\S)\s*\$\$\s*$/);
+      if (displayMathEnd) {
+        mathLines.push(displayMathEnd[1]);
+        appendRenderedMathBlock(normalized, mathLines.join("\n").trim());
+        inDisplayMathBlock = false;
+        mathLines = [];
+        continue;
+      }
+
+      mathLines.push(line);
+      continue;
+    }
+
+    normalized.push(renderInlineMath(line));
+  }
+
+  if (inDisplayMathBlock && mathLines.length > 0) {
+    appendRenderedMathBlock(normalized, mathLines.join("\n").trim());
+  }
+
+  return normalized.join("\n");
+}
+
+function appendRenderedMathBlock(lines, expression) {
+  if (!expression) {
+    return;
+  }
+
+  if (lines.length > 0 && lines[lines.length - 1].trim() !== "") {
+    lines.push("");
+  }
+
+  lines.push(renderDisplayMathBlock(expression));
+  lines.push("");
+}
+
+function renderDisplayMathBlock(expression) {
+  return `<div class="commentary-math-block">${katex.renderToString(normalizeDisplayMathExpression(expression), {
+    displayMode: true,
+    throwOnError: false,
+    output: "html",
+  })}</div>`;
 }
 
 function renderLeftSource(left, language) {
@@ -300,7 +423,71 @@ function renderLeftSource(left, language) {
   return katex.renderToString(left.content ?? "", {
     displayMode: true,
     throwOnError: false,
+    output: "html",
   });
+}
+
+function renderInlineMath(line) {
+  let result = "";
+  let index = 0;
+  let inCodeSpan = false;
+
+  while (index < line.length) {
+    const char = line[index];
+
+    if (char === "`") {
+      inCodeSpan = !inCodeSpan;
+      result += char;
+      index += 1;
+      continue;
+    }
+
+    if (char === "\\" && index + 1 < line.length) {
+      result += line.slice(index, index + 2);
+      index += 2;
+      continue;
+    }
+
+    if (char === "$" && !inCodeSpan) {
+      const closingIndex = findInlineMathClosingIndex(line, index + 1);
+      if (closingIndex > index + 1) {
+        const expression = line.slice(index + 1, closingIndex).trim();
+        result += katex.renderToString(expression, {
+          displayMode: false,
+          throwOnError: false,
+          output: "html",
+        });
+        index = closingIndex + 1;
+        continue;
+      }
+    }
+
+    result += char;
+    index += 1;
+  }
+
+  return result;
+}
+
+function findInlineMathClosingIndex(line, startIndex) {
+  for (let index = startIndex; index < line.length; index += 1) {
+    if (line[index] === "\\" && index + 1 < line.length) {
+      index += 1;
+      continue;
+    }
+
+    if (line[index] === "$") {
+      return index;
+    }
+  }
+
+  return -1;
+}
+
+function normalizeDisplayMathExpression(expression) {
+  return expression
+    .replace(/\\begin\{align\*?\}/g, "\\begin{aligned}")
+    .replace(/\\end\{align\*?\}/g, "\\end{aligned}");
 }
 
 function extractPairBlueprints(rawSource) {
@@ -380,7 +567,8 @@ function findPairClosingIndex(lines, startIndex) {
   let inDisplayMathBlock = false;
 
   for (let index = startIndex; index < lines.length; index += 1) {
-    const trimmed = lines[index].trim();
+    const line = lines[index];
+    const trimmed = line.trim();
 
     if (inFencedCodeBlock) {
       if (trimmed === "```") {
@@ -390,7 +578,7 @@ function findPairClosingIndex(lines, startIndex) {
     }
 
     if (inDisplayMathBlock) {
-      if (trimmed === "$$") {
+      if (trimmed === "$$" || endsDisplayMathBlock(trimmed)) {
         inDisplayMathBlock = false;
       }
       continue;
@@ -401,7 +589,7 @@ function findPairClosingIndex(lines, startIndex) {
       continue;
     }
 
-    if (trimmed === "$$") {
+    if (trimmed === "$$" || startsDisplayMathBlock(trimmed)) {
       inDisplayMathBlock = true;
       continue;
     }
@@ -414,6 +602,14 @@ function findPairClosingIndex(lines, startIndex) {
   return -1;
 }
 
+function startsDisplayMathBlock(trimmed) {
+  return trimmed.startsWith("$$") && trimmed !== "$$" && !trimmed.endsWith("$$");
+}
+
+function endsDisplayMathBlock(trimmed) {
+  return trimmed.endsWith("$$") && trimmed !== "$$" && !trimmed.startsWith("$$");
+}
+
 async function writeOutput(filePath, html) {
   await mkdir(path.dirname(filePath), { recursive: true });
   await writeFile(filePath, html, "utf8");
@@ -423,13 +619,14 @@ async function emitAssetFiles(assetsDir, outDir) {
   const assetFiles = [
     ["css", "site.css"],
     ["js", "article.js"],
+    ["js", "article-focus-logic.js"],
   ];
 
   for (const [kind, fileName] of assetFiles) {
     const sourcePath = path.join(assetsDir, kind, fileName);
     const targetPath = path.join(outDir, "assets", kind, fileName);
     const source = await readFile(sourcePath, "utf8");
-      await writeOutput(targetPath, source);
+    await writeOutput(targetPath, source);
   }
 
   const katexDistDir = path.join(
@@ -447,6 +644,14 @@ async function emitAssetFiles(assetsDir, outDir) {
 
   await writeOutput(katexCssTarget, await readFile(katexCssSource, "utf8"));
   await cp(katexFontsSource, katexFontsTarget, { recursive: true });
+
+  const localFontFiles = ["HackNerdFont-Regular.ttf", "LXGWWenKai.ttf"];
+  for (const fileName of localFontFiles) {
+    const sourcePath = path.join(path.dirname(assetsDir), fileName);
+    const targetPath = path.join(outDir, "assets", "fonts", fileName);
+    await mkdir(path.dirname(targetPath), { recursive: true });
+    await cp(sourcePath, targetPath);
+  }
 }
 
 function escapeHtml(value) {

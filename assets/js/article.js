@@ -1,3 +1,5 @@
+import { pickAutoFocusIndex } from "./article-focus-logic.js";
+
 const notePairs = Array.from(document.querySelectorAll(".pair-unit"));
 const sourceSegments = Array.from(document.querySelectorAll(".pair-source-segment"));
 const annotatedSourceSegments = sourceSegments.filter(
@@ -8,19 +10,16 @@ const notesPanel = document.querySelector(".article-notes-panel");
 const sourcePanel = document.querySelector(".article-source-panel");
 const focusLayer = document.querySelector("[data-focus-layer]");
 const focusCard = document.querySelector("[data-focus-card]");
+const FOCUS_STICKY_TOP = 24;
 
-const notePairById = new Map(
-  notePairs
-    .filter((pair) => pair.dataset.pairId)
-    .map((pair) => [pair.dataset.pairId, pair]),
-);
 const notePairByIndex = new Map(notePairs.map((pair) => [pair.dataset.pairIndex, pair]));
 const sourceByIndex = new Map(
   annotatedSourceSegments.map((segment) => [segment.dataset.pairIndex, segment]),
 );
 
-let lockedPair = null;
+let activePair = null;
 let layoutFrame = 0;
+let autoFocusFrame = 0;
 
 function clearSourceHighlights() {
   for (const segment of sourceSegments) {
@@ -57,7 +56,13 @@ function setFocusPosition(pair) {
 
   const panelRect = notesPanel.getBoundingClientRect();
   const sourceRect = source.getBoundingClientRect();
-  const offset = sourceRect.top - panelRect.top;
+  const alignedOffset = Math.max(0, sourceRect.top - panelRect.top);
+  const stickyOffset = Math.max(0, FOCUS_STICKY_TOP - panelRect.top);
+  const trailingOffset = Math.max(
+    alignedOffset,
+    sourceRect.bottom - panelRect.top - notePanel.offsetHeight,
+  );
+  const offset = Math.min(Math.max(stickyOffset, alignedOffset), trailingOffset);
 
   focusCard.style.setProperty("--focus-offset", `${Math.max(0, offset)}px`);
   const minHeight = Math.max(sourcePanel?.offsetHeight ?? 0, offset + notePanel.offsetHeight);
@@ -66,7 +71,8 @@ function setFocusPosition(pair) {
 
 function resetFocusMode() {
   cancelAnimationFrame(layoutFrame);
-  lockedPair = null;
+  cancelAnimationFrame(autoFocusFrame);
+  activePair = null;
   noteStack?.classList.remove("is-hidden");
   focusLayer?.setAttribute("hidden", "");
   focusCard?.style.removeProperty("--focus-offset");
@@ -83,19 +89,19 @@ function resetFocusMode() {
 function scheduleFocusPosition(pair) {
   cancelAnimationFrame(layoutFrame);
   layoutFrame = requestAnimationFrame(() => {
-    if (lockedPair === pair) {
+    if (activePair === pair) {
       setFocusPosition(pair);
     }
   });
 }
 
-function applyFocusMode(pair, { focus = false } = {}) {
+function applyFocusMode(pair) {
   if (!pair || !focusLayer) {
     return;
   }
 
   cancelAnimationFrame(layoutFrame);
-  lockedPair = pair;
+  activePair = pair;
 
   for (const item of notePairs) {
     item.classList.toggle("is-active", item === pair);
@@ -110,125 +116,99 @@ function applyFocusMode(pair, { focus = false } = {}) {
     setFocusCardMarkup(pair);
   }
   scheduleFocusPosition(pair);
-
-  if (focus) {
-    sourceByIndex.get(pair.dataset.pairIndex)?.focus?.({ preventScroll: true });
-  }
 }
 
-function updateHashForPair(pair, { replace = false } = {}) {
-  const id = pair?.dataset.pairId;
-  if (!id) {
-    return;
-  }
+function isNearPageBottom() {
+  const viewportBottom = window.scrollY + window.innerHeight;
+  const documentHeight = Math.max(
+    document.documentElement?.scrollHeight ?? 0,
+    document.body?.scrollHeight ?? 0,
+  );
 
-  const nextHash = `#${encodeURIComponent(id)}`;
-  if (replace) {
-    history.replaceState(null, "", nextHash);
-  } else if (window.location.hash !== nextHash) {
-    history.pushState(null, "", nextHash);
-  }
+  return documentHeight - viewportBottom <= 32;
 }
 
-function clearHash() {
-  if (!window.location.hash) {
-    return;
+function findLastVisiblePair() {
+  for (let index = annotatedSourceSegments.length - 1; index >= 0; index -= 1) {
+    const segment = annotatedSourceSegments[index];
+    const rect = segment.getBoundingClientRect();
+    const visibleTop = Math.max(rect.top, 0);
+    const visibleBottom = Math.min(rect.bottom, window.innerHeight);
+
+    if (visibleBottom - visibleTop > 0) {
+      return notePairByIndex.get(segment.dataset.pairIndex) ?? null;
+    }
   }
 
-  history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+  return null;
 }
 
-function toggleFocus(pair, options = {}) {
+function findCenteredPair() {
+  if (!annotatedSourceSegments.length) {
+    return null;
+  }
+
+  if (isNearPageBottom()) {
+    return findLastVisiblePair();
+  }
+
+  const bestIndex = pickAutoFocusIndex(
+    annotatedSourceSegments.map((segment) => {
+      const rect = segment.getBoundingClientRect();
+      return {
+        top: rect.top,
+        bottom: rect.bottom,
+        height: rect.height,
+      };
+    }),
+    {
+      viewportHeight: window.innerHeight,
+      focusLine: window.innerHeight / 2,
+    },
+  );
+
+  if (bestIndex < 0) {
+    return null;
+  }
+
+  const segment = annotatedSourceSegments[bestIndex];
+  return segment ? notePairByIndex.get(segment.dataset.pairIndex) ?? null : null;
+}
+
+function syncAutoFocus() {
+  const pair = findCenteredPair();
   if (!pair) {
-    return;
-  }
-
-  if (lockedPair === pair) {
-    resetFocusMode();
-    clearHash();
-    return;
-  }
-
-  applyFocusMode(pair, options);
-  updateHashForPair(pair, { replace: options.replace ?? false });
-}
-
-function syncHashFocus({ focus = false } = {}) {
-  const id = decodeURIComponent(window.location.hash.slice(1));
-  if (!id) {
     resetFocusMode();
     return;
   }
 
-  const pair = notePairById.get(id);
-  if (!pair) {
+  if (activePair === pair) {
+    scheduleFocusPosition(pair);
     return;
   }
 
-  applyFocusMode(pair, { focus });
+  applyFocusMode(pair);
 }
 
-for (const pair of notePairs) {
-  pair.addEventListener("click", (event) => {
-    const selection = window.getSelection?.();
-    if (selection && !selection.isCollapsed) {
-      return;
-    }
-
-    if (event.button !== 0) {
-      return;
-    }
-
-    toggleFocus(pair);
+function scheduleAutoFocus() {
+  cancelAnimationFrame(autoFocusFrame);
+  autoFocusFrame = requestAnimationFrame(() => {
+    syncAutoFocus();
   });
 }
-
-for (const segment of annotatedSourceSegments) {
-  segment.tabIndex = 0;
-
-  segment.addEventListener("click", () => {
-    const pair = notePairByIndex.get(segment.dataset.pairIndex);
-    toggleFocus(pair);
-  });
-
-  segment.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter" && event.key !== " ") {
-      return;
-    }
-
-    event.preventDefault();
-    const pair = notePairByIndex.get(segment.dataset.pairIndex);
-    toggleFocus(pair, { focus: true });
-  });
-}
-
-document.addEventListener("click", (event) => {
-  if (!lockedPair) {
-    return;
-  }
-
-  const target = event.target;
-  if (
-    target instanceof Element &&
-    (target.closest(".pair-source-segment") ||
-      target.closest(".pair-unit") ||
-      target.closest("[data-focus-card]"))
-  ) {
-    return;
-  }
-
-  resetFocusMode();
-  clearHash();
-});
 
 window.addEventListener("resize", () => {
-  if (lockedPair) {
-    scheduleFocusPosition(lockedPair);
-  }
+  scheduleAutoFocus();
 });
 
-window.addEventListener("hashchange", () => {
-  syncHashFocus();
-});
+window.addEventListener(
+  "scroll",
+  () => {
+    scheduleAutoFocus();
+  },
+  { passive: true },
+);
 
-syncHashFocus();
+if (annotatedSourceSegments.length) {
+  scheduleAutoFocus();
+}

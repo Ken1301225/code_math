@@ -6,25 +6,27 @@ export function renderHomePage({ siteTitle, basePath, intro, guides, latest }) {
     body: `
       <main class="page">
         <header class="site-header">
-          <h1>${escapeHtml(siteTitle)}</h1>
+          <h1 class="site-heading">${escapeHtml(siteTitle)}</h1>
           <p class="site-intro">${escapeHtml(intro)}</p>
         </header>
-        <section class="home-section editorial-panel">
+        <section class="home-section home-guide editorial-panel">
           <h2>Guide</h2>
-          <ul class="card-list">
+          <div class="guide-strip">
             ${guides
               .map(
                 (guide) => `
-                  <li>
-                    <a class="guide-link guide-link--${escapeHtml(guide.kind ?? "generic")}" href="${escapeHtml(guide.href)}">
+                    <a
+                      class="guide-link guide-link--${escapeHtml(guide.kind ?? "generic")}"
+                      href="${escapeHtml(guide.href)}"
+                      aria-label="${escapeHtml(renderGuideAriaLabel(guide.kind, guide.label))}"
+                      title="${escapeHtml(renderGuideAriaLabel(guide.kind, guide.label))}"
+                    >
                       ${renderGuideIcon(guide.kind)}
-                      <span>${escapeHtml(guide.label)}</span>
                     </a>
-                  </li>
                 `,
               )
               .join("")}
-          </ul>
+          </div>
         </section>
         <section class="home-section editorial-panel">
           <h2>Latest</h2>
@@ -65,22 +67,26 @@ function pageShell({ siteTitle, pageTitle, basePath, body }) {
 
 function renderGuideIcon(kind) {
   if (kind === "code") {
-    return `
-      <svg class="guide-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M9 6 4 12l5 6M15 6l5 6-5 6M13 4l-2 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
-      </svg>
-    `;
+    return `<span class="guide-glyph guide-glyph--code" aria-hidden="true">&#xf121;</span>`;
   }
 
   if (kind === "math") {
-    return `
-      <svg class="guide-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M6 6h12M8 18h8M7 6l4.5 6L7 18M17 6l-4.5 6L17 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
-      </svg>
-    `;
+    return `<span class="guide-glyph guide-glyph--math" aria-hidden="true">ƒx</span>`;
   }
 
   return "";
+}
+
+function renderGuideAriaLabel(kind, fallback) {
+  if (kind === "code") {
+    return "Code";
+  }
+
+  if (kind === "math") {
+    return "Math";
+  }
+
+  return fallback ?? "Guide";
 }
 
 function escapeHtml(value) {

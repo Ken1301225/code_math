@@ -7,6 +7,47 @@
 Write each article as a Markdown file in `articles/` with front matter plus one or more
 `:::pair` blocks.
 
+You can also organize files in nested folders such as `articles/code/project-a/foo.md`
+or `articles/math/project-b/bar.md`. Folder structure is preserved in article URLs, so
+`articles/code/project-a/foo.md` becomes `/articles/code/project-a/<slug>/`.
+
+The folder name does not replace front matter. Each file still needs its own:
+
+```yaml
+title:
+slug:
+date:
+type: code | math
+```
+
+Recommended usage:
+
+- Put articles from the same project together under one folder.
+- Keep using `type: code` or `type: math` to control which top-level listing page they
+  appear in.
+- Use deeper subfolders when a project has multiple subtopics.
+
+Examples:
+
+```text
+articles/code/sparsegpt/overview.md
+articles/code/sparsegpt/analysis/pruning-step.md
+articles/math/bandit/regret/basic-bound.md
+```
+
+With:
+
+```yaml
+slug: pruning-step
+type: code
+```
+
+the second file above will be published at:
+
+```text
+/articles/code/sparsegpt/analysis/pruning-step/
+```
+
 ~~~md
 ---
 title: Prefix Sum Walkthrough
