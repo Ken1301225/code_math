@@ -83,6 +83,9 @@ print(1)
     assert.match(codeHtml, /class="article-ratio-band"/);
     assert.match(codeHtml, /data-ratio-kind="code"/);
     assert.match(codeHtml, /data-ratio-kind="math"/);
+    assert.match(codeHtml, /3 articles/);
+    assert.match(codeHtml, /Code<\/span>\s*<span class="article-ratio-value">67%/);
+    assert.match(codeHtml, /Math<\/span>\s*<span class="article-ratio-value">33%/);
     assert.match(codeHtml, /class="article-source-panel editorial-panel"/);
     assert.match(codeHtml, /data-note-stack/);
     assert.match(codeHtml, /data-focus-layer/);
@@ -99,6 +102,7 @@ print(1)
     assert.match(mathHtml, /href="\/code_math\/assets\/vendor\/katex\/katex\.min\.css"/);
     assert.match(mathHtml, /class="[^"]*pair-source-segment--math[^"]*"/);
     assert.match(mathHtml, /class="article-ratio-chart article-ratio-chart--split"/);
+    assert.match(mathHtml, /3 articles/);
 
     assert.match(emptyHtml, /print\(1\)/);
     assert.doesNotMatch(emptyHtml, /data-note-panel/);

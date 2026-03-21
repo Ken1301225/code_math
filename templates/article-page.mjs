@@ -1,4 +1,4 @@
-export function renderArticlePage({ siteTitle, basePath, article }) {
+export function renderArticlePage({ siteTitle, basePath, article, siteStats }) {
   return pageShell({
     siteTitle,
     pageTitle: article.title,
@@ -35,7 +35,7 @@ export function renderArticlePage({ siteTitle, basePath, article }) {
                 }
               </dl>
             </div>
-            ${renderRatioChart(article)}
+            ${renderRatioChart(siteStats)}
           </div>
         </header>
         <section class="article-body">
@@ -65,10 +65,10 @@ export function renderArticlePage({ siteTitle, basePath, article }) {
   });
 }
 
-function renderRatioChart(article) {
-  const total = article.pairs.length || 1;
-  const codeCount = article.pairs.filter((pair) => pair.left.kind === "code").length;
-  const mathCount = article.pairs.filter((pair) => pair.left.kind === "math").length;
+function renderRatioChart(siteStats) {
+  const total = siteStats?.totalArticles || 1;
+  const codeCount = siteStats?.articleTypeCounts?.code || 0;
+  const mathCount = siteStats?.articleTypeCounts?.math || 0;
   const bars = [
     {
       kind: "code",
@@ -83,10 +83,10 @@ function renderRatioChart(article) {
   ];
 
   return `
-    <aside class="article-ratio-chart article-ratio-chart--split" aria-label="Code and math ratio">
+    <aside class="article-ratio-chart article-ratio-chart--split" aria-label="Site-wide code and math article ratio">
       <div class="article-ratio-header">
-        <p class="article-ratio-kicker">Composition</p>
-        <p class="article-ratio-total">${article.pairs.length} pairs</p>
+        <p class="article-ratio-kicker">Archive Mix</p>
+        <p class="article-ratio-total">${total} articles</p>
       </div>
       <div class="article-ratio-band" aria-hidden="true">
         ${bars

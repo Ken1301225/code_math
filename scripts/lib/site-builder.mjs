@@ -80,6 +80,7 @@ export async function buildSite(options = {}) {
   }
 
   const listings = collectListings(articles);
+  const siteStats = collectSiteStats(listings);
 
   await rm(outDir, { recursive: true, force: true });
   await emitAssetFiles(assetsDir, outDir);
@@ -106,6 +107,7 @@ export async function buildSite(options = {}) {
         siteTitle: SITE_TITLE,
         basePath,
         article,
+        siteStats,
       }),
     );
   }
@@ -146,7 +148,20 @@ export async function buildSite(options = {}) {
   return {
     articles,
     listings,
+    siteStats,
     outDir,
+  };
+}
+
+function collectSiteStats(listings) {
+  const articleTypeCounts = {
+    code: listings.byType.code.length,
+    math: listings.byType.math.length,
+  };
+
+  return {
+    articleTypeCounts,
+    totalArticles: articleTypeCounts.code + articleTypeCounts.math,
   };
 }
 
