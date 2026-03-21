@@ -3,6 +3,24 @@
   src: url("../fonts/HackNerdFont-Regular.ttf") format("truetype");
   font-style: normal;
   font-weight: 400;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF,
+    U+0100-024F,
+    U+0259,
+    U+2000-206F,
+    U+20A0-20CF,
+    U+2100-214F,
+    U+2190-21FF,
+    U+2200-22FF,
+    U+2300-23FF,
+    U+2460-24FF,
+    U+2500-257F,
+    U+2580-259F,
+    U+25A0-25FF,
+    U+2600-26FF,
+    U+2700-27BF,
+    U+E000-F8FF;
 }
 
 @font-face {
@@ -10,6 +28,16 @@
   src: url("../fonts/LXGWWenKai.ttf") format("truetype");
   font-style: normal;
   font-weight: 400;
+  font-display: swap;
+  unicode-range:
+    U+2E80-2EFF,
+    U+2F00-2FDF,
+    U+3000-303F,
+    U+31C0-31EF,
+    U+3400-4DBF,
+    U+4E00-9FFF,
+    U+F900-FAFF,
+    U+FF00-FFEF;
 }
 
 :root {

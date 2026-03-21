@@ -1,4 +1,5 @@
 import { cp, readFile, readdir, mkdir, rm, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -89,12 +90,13 @@ export async function buildSite(options = {}) {
   const siteStats = collectSiteStats(listings);
 
   await rm(outDir, { recursive: true, force: true });
-  await emitAssetFiles(assetsDir, outDir);
+  const assets = await emitAssetFiles(assetsDir, outDir);
 
   await writeOutput(
     path.join(outDir, "index.html"),
     renderHomePage({
       siteTitle: SITE_TITLE,
+      assets,
       basePath,
       intro:
         "A lightweight reading site for paired code annotations and math proof notes.",
@@ -111,6 +113,7 @@ export async function buildSite(options = {}) {
       path.join(outDir, "articles", ...article.outputRouteSegments, "index.html"),
       renderArticlePage({
         siteTitle: SITE_TITLE,
+        assets,
         basePath,
         article,
         siteStats,
@@ -128,6 +131,7 @@ export async function buildSite(options = {}) {
       path.join(outDir, "type", encodeURIComponent(type), "index.html"),
       renderListingPage({
         siteTitle: SITE_TITLE,
+        assets,
         basePath,
         title: TYPE_LABELS[type] ?? type,
         intro: `All ${TYPE_LABELS[type] ?? type} articles.`,
@@ -142,6 +146,7 @@ export async function buildSite(options = {}) {
       path.join(outDir, "tag", encodeURIComponent(tag), "index.html"),
       renderListingPage({
         siteTitle: SITE_TITLE,
+        assets,
         basePath,
         title: `Tag: ${tag}`,
         intro: `Articles tagged with ${tag}.`,
@@ -616,6 +621,8 @@ async function writeOutput(filePath, html) {
 }
 
 async function emitAssetFiles(assetsDir, outDir) {
+  const packageRoot = path.dirname(assetsDir);
+  const assetVersion = await buildAssetVersion(assetsDir, packageRoot);
   const assetFiles = [
     ["css", "site.css"],
     ["js", "article.js"],
@@ -625,7 +632,8 @@ async function emitAssetFiles(assetsDir, outDir) {
   for (const [kind, fileName] of assetFiles) {
     const sourcePath = path.join(assetsDir, kind, fileName);
     const targetPath = path.join(outDir, "assets", kind, fileName);
-    const source = await readFile(sourcePath, "utf8");
+    const rawSource = await readFile(sourcePath, "utf8");
+    const source = transformAssetSource(rawSource, { kind, fileName, assetVersion });
     await writeOutput(targetPath, source);
   }
 
@@ -645,13 +653,57 @@ async function emitAssetFiles(assetsDir, outDir) {
   await writeOutput(katexCssTarget, await readFile(katexCssSource, "utf8"));
   await cp(katexFontsSource, katexFontsTarget, { recursive: true });
 
-  const localFontFiles = ["HackNerdFont-Regular.ttf", "LXGWWenKai.ttf"];
+  const localFontFiles = [
+    "HackNerdFont-Regular.ttf",
+    "LXGWWenKai.ttf",
+  ];
   for (const fileName of localFontFiles) {
-    const sourcePath = path.join(path.dirname(assetsDir), fileName);
+    const sourcePath = path.join(packageRoot, fileName);
     const targetPath = path.join(outDir, "assets", "fonts", fileName);
     await mkdir(path.dirname(targetPath), { recursive: true });
     await cp(sourcePath, targetPath);
   }
+
+  return {
+    version: assetVersion,
+    cssHref: `/assets/css/site.css?v=${assetVersion}`,
+    articleJsHref: `/assets/js/article.js?v=${assetVersion}`,
+  };
+}
+
+async function buildAssetVersion(assetsDir, packageRoot) {
+  const hash = createHash("sha1");
+  const versionFiles = [
+    path.join(assetsDir, "css", "site.css"),
+    path.join(assetsDir, "js", "article.js"),
+    path.join(assetsDir, "js", "article-focus-logic.js"),
+    path.join(packageRoot, "HackNerdFont-Regular.ttf"),
+    path.join(packageRoot, "LXGWWenKai.ttf"),
+  ];
+
+  for (const filePath of versionFiles) {
+    hash.update(await readFile(filePath));
+  }
+
+  return hash.digest("hex").slice(0, 10);
+}
+
+function transformAssetSource(source, { kind, fileName, assetVersion }) {
+  if (kind === "css" && fileName === "site.css") {
+    return source.replaceAll(
+      /url\("(\.\.\/fonts\/[^"]+\.(?:woff2|ttf))"\)/g,
+      'url("$1?v=' + assetVersion + '")',
+    );
+  }
+
+  if (kind === "js" && fileName === "article.js") {
+    return source.replace(
+      './article-focus-logic.js',
+      `./article-focus-logic.js?v=${assetVersion}`,
+    );
+  }
+
+  return source;
 }
 
 function escapeHtml(value) {

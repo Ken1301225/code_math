@@ -1,7 +1,8 @@
-export function renderHomePage({ siteTitle, basePath, intro, guides, latest }) {
+export function renderHomePage({ siteTitle, assets, basePath, intro, guides, latest }) {
   return pageShell({
     siteTitle,
     pageTitle: siteTitle,
+    assets,
     basePath,
     body: `
       <main class="page">
@@ -49,14 +50,14 @@ export function renderHomePage({ siteTitle, basePath, intro, guides, latest }) {
   });
 }
 
-function pageShell({ siteTitle, pageTitle, basePath, body }) {
+function pageShell({ siteTitle, pageTitle, assets, basePath, body }) {
   return `<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>${escapeHtml(pageTitle)}</title>
-    <link rel="stylesheet" href="${escapeHtml(withBasePath(basePath, "/assets/css/site.css"))}">
+    <link rel="stylesheet" href="${escapeHtml(withBasePath(basePath, assets.cssHref))}">
   </head>
   <body>
     ${body}

@@ -1,9 +1,10 @@
-export function renderArticlePage({ siteTitle, basePath, article, siteStats }) {
+export function renderArticlePage({ siteTitle, assets, basePath, article, siteStats }) {
   const pairViews = buildPairViews(article.pairs);
 
   return pageShell({
     siteTitle,
     pageTitle: article.title,
+    assets,
     basePath,
     body: `
       <main class="page article-page article-page--${escapeHtml(article.type)}">
@@ -185,19 +186,19 @@ function buildTagLegendItems(tagCounts) {
   ];
 }
 
-function pageShell({ siteTitle, pageTitle, basePath, body }) {
+function pageShell({ siteTitle, pageTitle, assets, basePath, body }) {
   return `<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>${escapeHtml(pageTitle)} · ${escapeHtml(siteTitle)}</title>
-    <link rel="stylesheet" href="${escapeHtml(withBasePath(basePath, "/assets/css/site.css"))}">
+    <link rel="stylesheet" href="${escapeHtml(withBasePath(basePath, assets.cssHref))}">
     <link rel="stylesheet" href="${escapeHtml(withBasePath(basePath, "/assets/vendor/katex/katex.min.css"))}">
   </head>
   <body>
     ${body}
-    <script type="module" src="${escapeHtml(withBasePath(basePath, "/assets/js/article.js"))}"></script>
+    <script type="module" src="${escapeHtml(withBasePath(basePath, assets.articleJsHref))}"></script>
   </body>
 </html>
 `;

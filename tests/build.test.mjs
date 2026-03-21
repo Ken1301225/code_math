@@ -191,6 +191,8 @@ $$
     assert.match(homeHtml, /href="\/code_math\/type\/code\/"/);
     assert.match(homeHtml, /href="\/code_math\/type\/math\/"/);
     assert.match(siteCss, /@font-face/);
+    assert.match(siteCss, /font-display: swap/);
+    assert.match(siteCss, /unicode-range:/);
     assert.match(siteCss, /font-family: "LXGW WenKai"/);
     assert.match(siteCss, /font-family: "Hack Nerd Font"/);
     assert.match(articleJs, /function findCenteredPair/);
@@ -205,8 +207,11 @@ $$
 
     assert.match(codeHtml, /The sentinel zero makes interval subtraction uniform/);
     assert.match(codeHtml, /data-pair-id="intro"/);
-    assert.match(codeHtml, /href="\/code_math\/assets\/css\/site\.css"/);
-    assert.match(codeHtml, /<script type="module" src="\/code_math\/assets\/js\/article\.js"><\/script>/);
+    assert.match(codeHtml, /href="\/code_math\/assets\/css\/site\.css\?v=[^"]+"/);
+    assert.match(
+      codeHtml,
+      /<script type="module" src="\/code_math\/assets\/js\/article\.js\?v=[^"]+"><\/script>/,
+    );
     assert.match(codeHtml, /class="article-masthead editorial-panel"/);
     assert.match(codeHtml, /class="article-hero-grid"/);
     assert.doesNotMatch(codeHtml, /class="article-summary-panel"/);
@@ -243,7 +248,7 @@ $$
 
     assert.match(mathHtml, /gradient penalty term/);
     assert.match(mathHtml, /katex/);
-    assert.match(mathHtml, /href="\/code_math\/assets\/css\/site\.css"/);
+    assert.match(mathHtml, /href="\/code_math\/assets\/css\/site\.css\?v=[^"]+"/);
     assert.match(mathHtml, /href="\/code_math\/assets\/vendor\/katex\/katex\.min\.css"/);
     assert.match(mathHtml, /class="[^"]*pair-source-segment--math[^"]*"/);
     assert.match(mathHtml, /class="article-chart-stack"/);
