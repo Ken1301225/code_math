@@ -56,8 +56,8 @@
   --pixel-border-soft: rgba(52, 35, 24, 0.12);
   --pixel-shadow: 5px 6px 0 rgba(33, 25, 21, 0.12);
   --pixel-shadow-strong: 7px 9px 0 rgba(33, 25, 21, 0.16);
-  --serif: "LXGW WenKai", "Hack Nerd Font", serif;
-  --sans: "Hack Nerd Font", "LXGW WenKai", monospace;
+  --serif: "Hack Nerd Font", monospace;
+  --sans: "Hack Nerd Font", monospace;
   --mono: "Hack Nerd Font", monospace;
 }
 
