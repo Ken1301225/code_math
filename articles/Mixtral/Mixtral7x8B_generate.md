@@ -274,7 +274,7 @@ I'm not conscious, but I can talk to you."
 ```
 计算辅助损失, 
 :::
-::: pair
+:::pair
 ```python
         if not return_dict:
             output = (logits,) + outputs[1:]
@@ -570,4 +570,3 @@ class MixtralModel(MixtralPreTrainedModel):
 ```
 从这里我们可以看出整个模型forward之后得到的输出顺序为`[hidden_states, next_cache, all_hidden_states, all_self_attns, all_router_logits]`
 :::
-
