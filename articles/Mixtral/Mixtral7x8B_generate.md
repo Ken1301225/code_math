@@ -1,6 +1,6 @@
 ---
 title: "part1: Mixtral7x8B generate"
-slug: Mixtral7x8B generate
+slug: Mixtral7x8B_generate
 date: 2026-03-24
 type: code
 tags:
